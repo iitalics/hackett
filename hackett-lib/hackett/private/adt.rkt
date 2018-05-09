@@ -199,8 +199,12 @@
   (struct pat-var pat-base (id) #:transparent)
   (struct pat-hole pat-base () #:transparent)
   (struct pat-con pat-base (constructor pats) #:transparent)
-  (struct pat-str pat-base (str) #:transparent)
+  (struct pat-datum pat-base (datum type-unexpanded) #:transparent)
   (define pat? pat-base?)
+
+  (define (pat-str stx v)    (pat-datum stx v #'String))
+  (define (pat-int stx v)    (pat-datum stx v #'Integer))
+  (define (pat-double stx v) (pat-datum stx v #'Double))
 
   (define-syntax-class pat
     #:description "a pattern"
@@ -266,6 +270,13 @@
              #:attr disappeared-uses '()]
     [pattern str:str
              #:attr pat (pat-str this-syntax #'str)
+             #:attr disappeared-uses '()]
+    [pattern n:exact-integer
+             #:attr pat (pat-int this-syntax #'n)
+             #:attr disappeared-uses '()]
+    [pattern n:number
+             #:when (double-flonum? (syntax-e #'n))
+             #:attr pat (pat-double this-syntax #'n)
              #:attr disappeared-uses '()])
 
   (define/contract (pat⇒! pat)
@@ -283,14 +294,15 @@
       [(pat-hole _)
        (let ([a^ (generate-temporary)])
          (values #`(#%type:wobbly-var #,a^) '() #{values #'_ %}))]
-      [(pat-str _ str)
-       (values (expand-type #'String) '() #{values str %})]
       [(pat-con _ con pats)
        (let*-values ([(τs_args τ_result) (data-constructor-args/result! con)]
                      [(assumps mk-pats) (pats⇐! pats τs_args)])
          (values τ_result assumps
                  (λ (ids) (let-values ([(match-pats rest) (mk-pats ids)])
-                            (values ((data-constructor-make-match-pat con) match-pats) rest)))))]))
+                            (values ((data-constructor-make-match-pat con) match-pats) rest)))))]
+      [(pat-datum _ datum t-stx)
+       (values (expand-type t-stx) '() #{values datum %})]))
+
 
   (define/contract (pat⇐! pat t)
     (-> pat? type?
@@ -429,9 +441,10 @@
             (let ([split-into (map constructor-tag->ideal-con (data-constructor-all-tags ctor))])
               (cons x split-into))])]
 
-        ; TODO: better exhaustiveness checking on strings. OCaml checks for the strings "*", "**",
-        ; "***" etc. It would be fairly easy to do the same using splitting.
-        [(pat-str _ s) #f])))
+        ; TODO: better exhaustiveness checking on datum. OCaml checks for successive unchecked patterns,
+        ; e.g. increasing integers or strings like "****" etc. This would probably be possible with splitting,
+        ; but for now we just consider datum to never be exhaustive without an explanation why.
+        [(pat-datum _ _ _) #f])))
 
 
   ; Checks if patterns are exhaustive or not. Given a list of pattern-lists, returns #f if no
