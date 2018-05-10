@@ -129,8 +129,7 @@
       #:context 'function-type-args/result!
       #:literal-sets [type-literals]
       [(~#%type:forall* [x ...] (~->* t ... r))
-       #:with [x^ ...] (generate-temporaries (attribute x))
-       #:do [(define inst-map (map cons (attribute x) (syntax->list #'[(#%type:wobbly-var x^) ...])))]
+       #:do [(define inst-map (map cons (attribute x) (generate-wobbly-vars (attribute x))))]
        (values (map #{insts % inst-map} (attribute t))
                (insts #'r inst-map))]))
 
@@ -277,12 +276,12 @@
              (values syntax? (listof identifier?))))) ; pattern given a set of binding ids
     (match pat
       [(pat-var _ id)
-       (let ([a^ (generate-temporary)])
-         (values #`(#%type:wobbly-var #,a^) (list (cons id #`(#%type:wobbly-var #,a^)))
+       (let ([t (generate-wobbly-var #'a)])
+         (values t (list (cons id t))
                  (match-lambda [(cons id rest) (values id rest)])))]
       [(pat-hole _)
-       (let ([a^ (generate-temporary)])
-         (values #`(#%type:wobbly-var #,a^) '() #{values #'_ %}))]
+       (let ([t (generate-wobbly-var #'a)])
+         (values t '() #{values #'_ %}))]
       [(pat-str _ str)
        (values (expand-type #'String) '() #{values str %})]
       [(pat-con _ con pats)
@@ -539,7 +538,7 @@
          ; wobbly var that will be unified against each body type.
          (define t_body
            (or (get-expected this-syntax)
-               #`(#%type:wobbly-var #,(generate-temporary #'body))))
+               (generate-wobbly-var #'a)))
 
          ; Infer the types of each clause and expand the bodies. Each clause has N patterns, each of
          ; which match against a particular type, and it also has a body, which must be typechecked
@@ -585,9 +584,9 @@
    #:with [val- ...] (for/list ([val (in-list (attribute val))]
                                 [ts_pats (in-list tss_pats-transposed)]
                                 [pats (in-list patss-transposed)])
-                       (let ([val^ (generate-temporary)])
-                         (for-each #{type<:! %1 #`(#%type:wobbly-var #,val^) #:src %2} ts_pats pats)
-                         (τ⇐! val (apply-current-subst #`(#%type:wobbly-var #,val^)))))
+                       (let ([t_val (generate-wobbly-var #'a)])
+                         (for-each #{type<:! %1 t_val #:src %2} ts_pats pats)
+                         (τ⇐! val (apply-current-subst t_val))))
 
    #:do [; Perform exhaustiveness checking.
          (define non-exhaust (check-exhaustiveness (attribute clause.pat.pat)

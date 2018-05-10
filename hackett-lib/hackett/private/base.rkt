@@ -100,8 +100,7 @@
            [{~and t:type {~parse (~#%type:forall* [x ...] a) #'t.expansion}}
             ; If the expected type is qualified, we need to skolemize it before continuing with
             ; inference.
-            #:with [x^ ...] (generate-temporaries (attribute x))
-            #:with [rigid-x^ ...] #'[(#%type:rigid-var x^) ...]
+            #:with [rigid-x^ ...] (generate-rigid-vars (attribute x))
             #:with a_skolemized (let ([skolem-subst (map cons (attribute x) (attribute rigid-x^))])
                                   (insts #'a skolem-subst))
             ; To support scoped type variables, we want the same skolems to be in scope while
@@ -240,18 +239,17 @@
       #:context 'τ⇒app!
       #:literal-sets [type-literals]
       [(#%type:wobbly-var x^)
-       #:with [x1^ x2^] (generate-temporaries #'[x^ x^])
-       (type-inst-l! #'x^ (template (?->* (#%type:wobbly-var x1^) (#%type:wobbly-var x2^))))
+       #:with [t_x1 t_x2] (generate-wobbly-vars #'[a b])
+       (type-inst-l! #'x^ (template (?->* t_x1 t_x2)))
        (values (quasisyntax/loc src
-                 (lazy- (#%app- (force- #,e_fn) #,(τ⇐! e_arg #'(#%type:wobbly-var x1^)))))
-               #'(#%type:wobbly-var x2^))]
+                 (lazy- (#%app- (force- #,e_fn) #,(τ⇐! e_arg #'t_x1))))
+               #'t_x2)]
       [(~-> a b)
        (values (quasisyntax/loc src
                  (lazy- (#%app- (force- #,e_fn) #,(τ⇐! e_arg #'a))))
                #'b)]
       [(#%type:forall x t)
-       #:with x^ (generate-temporary #'x)
-       (τ⇒app! e_fn (inst #'t #'x #'(#%type:wobbly-var x^)) e_arg #:src src)]
+       (τ⇒app! e_fn (inst #'t #'x (generate-wobbly-var #'x)) e_arg #:src src)]
       [(#%type:qual constr t)
        (τ⇒app! (quasisyntax/loc src
                  (lazy- (#%app- (force- #,e_fn)
@@ -351,12 +349,11 @@
    #:with [x-] xs-
    (attach-type #`(λ- (x-) #,e-) t)]
   [(_ x:id e:expr)
-   #:with x^ (generate-temporary)
-   #:with y^ (generate-temporary)
+   #:with [t_x1 t_x2] (generate-wobbly-vars #'[a b])
    #:do [(define-values [xs- e-]
-           (τ⇐/λ! #'e #'(#%type:wobbly-var y^) (list (cons #'x #'(#%type:wobbly-var x^)))))]
+           (τ⇐/λ! #'e #'t_x2 (list (cons #'x #'t_x1))))]
    #:with [x-] xs-
-   (attach-type #`(λ- (x-) #,e-) (template (?->* (#%type:wobbly-var x^) (#%type:wobbly-var y^))))])
+   (attach-type #`(λ- (x-) #,e-) (template (?->* t_x1 t_x2)))])
 
 (define-syntax-parser @%app
   [(_ f:expr e:expr)
@@ -383,8 +380,7 @@
   [(_ id:id
       {~optional fixity:fixity-annotation}
       e:expr)
-   #:with x^ (generate-temporary)
-   #:with t_e #'(#%type:wobbly-var x^)
+   #:with t_e (generate-wobbly-var #'a)
    #:do [(match-define-values [(list id-) e-] (τ⇐/λ! #'e #'t_e (list (cons #'id #'t_e))))]
    #:with t_gen (type-reduce-context (generalize (apply-current-subst #'t_e)))
    #`(begin-
@@ -459,8 +455,7 @@
                        (values (cons (list id (type-reduce-context t-ann) val)
                                      ids+ts+vals/ann)
                                ids+ts+vals/unann)
-                       (let* ([t_val-id (generate-temporary)]
-                              [t_val #`(#%type:wobbly-var #,t_val-id)])
+                       (let ([t_val (generate-wobbly-var #'a)])
                          (values ids+ts+vals/ann (cons (list id t_val val) ids+ts+vals/unann)))))])
              (values (reverse ids+ts+vals/ann) (reverse ids+ts+vals/unann))))
 

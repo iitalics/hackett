@@ -220,8 +220,7 @@
 (define/contract (unify-instance-head ts vars subgoals head)
   (-> (listof type?) (listof identifier?) (listof constr?) (listof (and/c type? type-mono?))
       (or/c (listof constr?) #f))
-  (let* ([vars^ (generate-temporaries vars)]
-         [var-subst (map #{cons %1 #`(#%type:wobbly-var #,%2)} vars vars^)]
+  (let* ([var-subst (map cons vars (generate-wobbly-vars vars))]
          [head-inst (map #{insts % var-subst} head)]
          [subgoals-inst (map #{insts % var-subst} subgoals)])
     (and (andmap types-match?! head-inst ts)

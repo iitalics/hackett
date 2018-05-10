@@ -252,12 +252,11 @@
      no-op]
     ; <:∀L
     [[(#%type:forall x a) b]
-     (let ([a* (inst #'a #'x #`(#%type:wobbly-var #,(generate-temporary #'x)))])
+     (let ([a* (inst #'a #'x (generate-wobbly-var #'x))])
        (type<:/full! a* #'b #:src src #:elaborate? elaborate?))]
     ; <:∀R
     [[a (#%type:forall x b)]
-     (let* ([x^ (generate-temporary #'x)]
-            [b* (inst #'b #'x #`(#%type:rigid-var #,x^))])
+     (let ([b* (inst #'b #'x (generate-rigid-var #'x))])
        (type<:/full! #'a b* #:src src #:elaborate? elaborate?))]
     ; <:Qual
     [[(#%type:qual constr a) b]
@@ -299,11 +298,10 @@
      (modify-type-context #{snoc % (ctx:solution x^ t)})]
     ; InstLArr
     [(~-> a b)
-     #:with [x1^ x2^] (generate-temporaries (list x^ x^))
-     (modify-type-context
-      #{snoc % (ctx:solution x^ (template (?->* (#%type:wobbly-var x1^) (#%type:wobbly-var x2^))))})
-     (type-inst-r! #'a #'x1^)
-     (type-inst-l! #'x2^ (apply-current-subst #'b))]
+     #:with [t_x1 t_x2] (generate-wobbly-vars #'[x x])
+     (type-inst-l! x^ (template (?->* t_x1 t_x2)))
+     (type-inst-r! #'a #'t_x1)
+     (type-inst-l! #'t_x2 (apply-current-subst #'b))]
     ; InstLAllR
     [(#%type:forall x t*)
      (type-inst-l! x^ #'t*)]
@@ -321,15 +319,13 @@
      (modify-type-context #{snoc % (ctx:solution x^ t)})]
     ; InstRArr
     [(~-> a b)
-     #:with [x1^ x2^] (generate-temporaries (list x^ x^))
-     (modify-type-context
-      #{snoc % (ctx:solution x^ (template (?->* (#%type:wobbly-var x1^) (#%type:wobbly-var x2^))))})
-     (type-inst-l! #'x1^ #'a)
-     (type-inst-r! (apply-current-subst #'b) #'x2^)]
+     #:with [t_x1 t_x2] (generate-wobbly-vars #'[x x])
+     (type-inst-l! x^ (template (?->* t_x1 t_x2)))
+     (type-inst-l! #'t_x1 #'a)
+     (type-inst-r! (apply-current-subst #'b) #'t_x2)]
     ; InstRAllL
     [(#%type:forall x t*)
-     #:with y^ (generate-temporary #'x)
-     (type-inst-r! (inst #'t* #'x #'(#%type:wobbly-var y^)) x^)]
+     (type-inst-r! (inst #'t* #'x (generate-wobbly-var #'x)) x^)]
     [_ (error 'type-inst-r! (format "internal error: failed to instantiate ~a to a supertype of ~a"
                                  (type->string #`(#%type:wobbly-var #,x^)) (type->string t)))]))
 
