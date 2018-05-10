@@ -35,6 +35,7 @@
          generalize inst insts type<:/full! type<:/elaborate! type<:! type-inst-l! type-inst-r!
          apply-subst apply-current-subst
          current-type-context modify-type-context
+         generate-wobbly-vars generate-wobbly-var generate-rigid-var generate-rigid-vars
          attach-type attach-expected get-type get-expected apply-current-subst-in-tooltips
          make-typed-var-transformer
          (for-template (all-from-out hackett/private/type-language)))
@@ -137,19 +138,8 @@
 
 (struct ctx:solution (x^ t) #:prefab)
 
-(define (ctx-elem? x) ((disjoin ctx:solution?) x))
 (define (ctx? x) ((listof ctx-elem?) x))
-(define/contract ctx-elem=?
-  (-> ctx-elem? ctx-elem? boolean?)
-  (match-lambda**
-   [[(ctx:solution x^ a) (ctx:solution y^ b)] (and (free-identifier=? x^ y^) (type=? a b))]
-   [[_ _] #f]))
-(define/contract (ctx-member? ctx elem)
-  (-> ctx? ctx-elem? boolean?)
-  (and (member elem ctx ctx-elem=?) #t))
-(define/contract (ctx-remove ctx elem)
-  (-> ctx? ctx-elem? ctx?)
-  (remove elem ctx ctx-elem=?))
+(define (ctx-elem? x) ((disjoin ctx:solution?) x))
 
 (define/contract (ctx-find-solution ctx x^)
   (-> ctx? identifier? (or/c type? #f))
@@ -203,6 +193,19 @@
 (define/contract (modify-type-context f)
   (-> (-> ctx? ctx?) void?)
   (current-type-context (f (current-type-context))))
+
+(define (generate-var x core-form)
+  (define x^ (generate-temporary x))
+  #`(#,core-form #,x^))
+
+(define (generate-wobbly-var x)
+  (generate-var x #'#%type:wobbly-var))
+(define (generate-rigid-var x)
+  (generate-var x #'#%type:rigid-var))
+(define (generate-wobbly-vars xs)
+  (map generate-wobbly-var (if (syntax? xs) (syntax->list xs) xs)))
+(define (generate-rigid-vars xs)
+  (map generate-rigid-var (if (syntax? xs) (syntax->list xs) xs)))
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; subsumption, instantiation, and elaboration
