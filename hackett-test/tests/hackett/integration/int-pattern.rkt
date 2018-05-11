@@ -29,3 +29,9 @@
 (test {(special-list? (:: 2 (:: 3 Nil))) ==! False})
 (test {(special-list? (:: 3 (:: 2 Nil))) ==! False})
 
+
+(defn fact : {Integer -> Integer}
+  [[0] 1]
+  [[n] (* n (fact (- n 1)))])
+
+(test {(fact 4) ==! 24})

@@ -288,9 +288,9 @@
        (let ([a^ (generate-temporary)])
          (values #`(#%type:wobbly-var #,a^) '() #{values #'_ %}))]
       [(pat-str _ str)
-       (values (expand-type #'String) '() #{values str %})]
+       (values (expand-type #'String) '() #{values #`(app force- '#,str) %})]
       [(pat-int _ int)
-       (values (expand-type #'Integer) '() #{values int %})]
+       (values (expand-type #'Integer) '() #{values #`(app force- '#,int) %})]
       [(pat-con _ con pats)
        (let*-values ([(τs_args τ_result) (data-constructor-args/result! con)]
                      [(assumps mk-pats) (pats⇐! pats τs_args)])
