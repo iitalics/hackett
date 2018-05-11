@@ -100,7 +100,7 @@
            [{~and t:type {~parse (~#%type:forall* [x ...] a) #'t.expansion}}
             ; If the expected type is qualified, we need to skolemize it before continuing with
             ; inference.
-            #:with [rigid-x^ ...] (generate-rigid-vars (attribute x))
+            #:with [rigid-x^ ...] (generate-rigid-vars! (attribute x))
             #:with a_skolemized (let ([skolem-subst (map cons (attribute x) (attribute rigid-x^))])
                                   (insts #'a skolem-subst))
             ; To support scoped type variables, we want the same skolems to be in scope while
@@ -239,7 +239,7 @@
       #:context 'τ⇒app!
       #:literal-sets [type-literals]
       [(#%type:wobbly-var x^)
-       #:with [t_x1 t_x2] (generate-wobbly-vars #'[a b])
+       #:with [t_x1 t_x2] (generate-wobbly-vars! #'[a b])
        (type-inst-l! #'x^ (template (?->* t_x1 t_x2)))
        (values (quasisyntax/loc src
                  (lazy- (#%app- (force- #,e_fn) #,(τ⇐! e_arg #'t_x1))))
@@ -249,7 +249,7 @@
                  (lazy- (#%app- (force- #,e_fn) #,(τ⇐! e_arg #'a))))
                #'b)]
       [(#%type:forall x t)
-       (τ⇒app! e_fn (inst #'t #'x (generate-wobbly-var #'x)) e_arg #:src src)]
+       (τ⇒app! e_fn (inst #'t #'x (generate-wobbly-var! #'x)) e_arg #:src src)]
       [(#%type:qual constr t)
        (τ⇒app! (quasisyntax/loc src
                  (lazy- (#%app- (force- #,e_fn)
@@ -349,7 +349,7 @@
    #:with [x-] xs-
    (attach-type #`(λ- (x-) #,e-) t)]
   [(_ x:id e:expr)
-   #:with [t_x1 t_x2] (generate-wobbly-vars #'[a b])
+   #:with [t_x1 t_x2] (generate-wobbly-vars! #'[a b])
    #:do [(define-values [xs- e-]
            (τ⇐/λ! #'e #'t_x2 (list (cons #'x #'t_x1))))]
    #:with [x-] xs-
@@ -380,7 +380,7 @@
   [(_ id:id
       {~optional fixity:fixity-annotation}
       e:expr)
-   #:with t_e (generate-wobbly-var #'a)
+   #:with t_e (generate-wobbly-var! #'a)
    #:do [(match-define-values [(list id-) e-] (τ⇐/λ! #'e #'t_e (list (cons #'id #'t_e))))]
    #:with t_gen (type-reduce-context (generalize (apply-current-subst #'t_e)))
    #`(begin-
@@ -455,7 +455,7 @@
                        (values (cons (list id (type-reduce-context t-ann) val)
                                      ids+ts+vals/ann)
                                ids+ts+vals/unann)
-                       (let ([t_val (generate-wobbly-var #'a)])
+                       (let ([t_val (generate-wobbly-var! #'a)])
                          (values ids+ts+vals/ann (cons (list id t_val val) ids+ts+vals/unann)))))])
              (values (reverse ids+ts+vals/ann) (reverse ids+ts+vals/unann))))
 

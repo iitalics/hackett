@@ -35,7 +35,7 @@
          generalize inst insts type<:/full! type<:/elaborate! type<:! type-inst-l! type-inst-r!
          apply-subst apply-current-subst
          current-type-context modify-type-context
-         generate-wobbly-vars generate-wobbly-var generate-rigid-var generate-rigid-vars
+         generate-wobbly-vars! generate-wobbly-var! generate-rigid-var! generate-rigid-vars!
          attach-type attach-expected get-type get-expected apply-current-subst-in-tooltips
          make-typed-var-transformer
          (for-template (all-from-out hackett/private/type-language)))
@@ -198,14 +198,14 @@
   (define x^ (generate-temporary x))
   #`(#,core-form #,x^))
 
-(define (generate-wobbly-var x)
+(define (generate-wobbly-var! x)
   (generate-var x #'#%type:wobbly-var))
-(define (generate-rigid-var x)
+(define (generate-rigid-var! x)
   (generate-var x #'#%type:rigid-var))
-(define (generate-wobbly-vars xs)
-  (map generate-wobbly-var (if (syntax? xs) (syntax->list xs) xs)))
-(define (generate-rigid-vars xs)
-  (map generate-rigid-var (if (syntax? xs) (syntax->list xs) xs)))
+(define (generate-wobbly-vars! xs)
+  (map generate-wobbly-var! (if (syntax? xs) (syntax->list xs) xs)))
+(define (generate-rigid-vars! xs)
+  (map generate-rigid-var! (if (syntax? xs) (syntax->list xs) xs)))
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; subsumption, instantiation, and elaboration
@@ -252,11 +252,11 @@
      no-op]
     ; <:∀L
     [[(#%type:forall x a) b]
-     (let ([a* (inst #'a #'x (generate-wobbly-var #'x))])
+     (let ([a* (inst #'a #'x (generate-wobbly-var! #'x))])
        (type<:/full! a* #'b #:src src #:elaborate? elaborate?))]
     ; <:∀R
     [[a (#%type:forall x b)]
-     (let ([b* (inst #'b #'x (generate-rigid-var #'x))])
+     (let ([b* (inst #'b #'x (generate-rigid-var! #'x))])
        (type<:/full! #'a b* #:src src #:elaborate? elaborate?))]
     ; <:Qual
     [[(#%type:qual constr a) b]
@@ -298,7 +298,7 @@
      (modify-type-context #{snoc % (ctx:solution x^ t)})]
     ; InstLArr
     [(~-> a b)
-     #:with [t_x1 t_x2] (generate-wobbly-vars #'[x x])
+     #:with [t_x1 t_x2] (generate-wobbly-vars! #'[x x])
      (type-inst-l! x^ (template (?->* t_x1 t_x2)))
      (type-inst-r! #'a #'t_x1)
      (type-inst-l! #'t_x2 (apply-current-subst #'b))]
@@ -319,13 +319,13 @@
      (modify-type-context #{snoc % (ctx:solution x^ t)})]
     ; InstRArr
     [(~-> a b)
-     #:with [t_x1 t_x2] (generate-wobbly-vars #'[x x])
+     #:with [t_x1 t_x2] (generate-wobbly-vars! #'[x x])
      (type-inst-l! x^ (template (?->* t_x1 t_x2)))
      (type-inst-l! #'t_x1 #'a)
      (type-inst-r! (apply-current-subst #'b) #'t_x2)]
     ; InstRAllL
     [(#%type:forall x t*)
-     (type-inst-r! (inst #'t* #'x (generate-wobbly-var #'x)) x^)]
+     (type-inst-r! (inst #'t* #'x (generate-wobbly-var! #'x)) x^)]
     [_ (error 'type-inst-r! (format "internal error: failed to instantiate ~a to a supertype of ~a"
                                  (type->string #`(#%type:wobbly-var #,x^)) (type->string t)))]))
 
