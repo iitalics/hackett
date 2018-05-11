@@ -27,7 +27,7 @@
          @%module-begin @%datum @%app
          @%superclasses-key @%dictionary-placeholder @%with-dictionary #%defer-expansion
          define-primop define-base-type
-         -> Integer Double String
+         -o -> Integer Double String
          : λ1 def let letrec todo!)
 
 (define-base-type Integer)

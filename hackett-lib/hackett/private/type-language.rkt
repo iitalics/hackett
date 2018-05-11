@@ -22,10 +22,11 @@
 (provide (for-syntax type-literal-ids type-literals type expand-type
                      ~#%type:app* ~#%type:app+ ?#%type:app*
                      ~#%type:forall* ?#%type:forall* ~#%type:qual* ?#%type:qual*
+                     ~fn ~fn* ?fn*
                      ~-> ~->* ~->+ ?->*
                      value-namespace-introduce type-namespace-introduce ~type)
          #%type:con #%type:app #%type:forall #%type:qual #%type:wobbly-var #%type:rigid-var
-         define-base-type ->
+         define-base-type fn -> -o
          begin-for-value begin-for-type)
 
 ;; ---------------------------------------------------------------------------------------------------
@@ -325,21 +326,78 @@
       (define-syntax ~name (make-type-con-pattern-expander (quote-syntax name))))))
 
 ;; ---------------------------------------------------------------------------------------------------
+;; linear multiplicity
+
+(define-base-type M1)  ; linear
+(define-base-type Mw)  ; unrestricted
+
+;; ---------------------------------------------------------------------------------------------------
 ;; function types
 
-; Functions are the only truly “baked-in” types, from the perspective of the typechecker. They are
-; handled specially by the typechecker in order to implement higher-rank polymorphism, so they are
-; defined here.
+; Functions are “baked-in” types, from the perspective of the typechecker. They are handled
+; specially by the typechecker in order to implement higher-rank polymorphism, so they are defined
+; here.
 
-(define-base-type -> #:fixity right)
+; Function type takes multiplicity as the first argument
+(define-base-type fn)
+
+(define-syntax ->
+  (make-infix-variable-like-transformer
+   (λ (stx) #`(#%type:app #,(syntax/loc stx fn) (#%type:con Mw)))
+   'right))
+
+(define-syntax -o
+  (make-infix-variable-like-transformer
+   (λ (stx) #`(#%type:app #,(syntax/loc stx fn) (#%type:con M1)))
+   'right))
 
 (begin-for-syntax
+  ;; --------------------------------------------
+  ;; syntax helpers for “fn”
+
+  (define-syntax-class nested-fns
+    #:description #f
+    #:attributes [[t 1] [μ 1]]
+    #:commit
+    #:literal-sets [type-literals]
+    [pattern (~fn ~! m a b:nested-fns)
+             #:with [t ...] #'[a b.t ...]
+             #:with [μ ...] #'[m b.μ ...]]
+    [pattern a
+             #:with [t ...] #'[a]
+             #:with [μ ...] #'[]])
+
+  (define-syntax ~fn*
+    (pattern-expander
+     (syntax-parser
+       [(_ μs-pat ts-pat)
+        #'{~and fns:nested-fns
+                {~parse μs-pat (attribute fns.μ)}
+                {~parse ts-pat (attribute fns.t)}}])))
+
+  (define-template-metafunction ?fn*
+    (syntax-parser
+      [(_ [] [a]) #'a]
+      [(head [μ π ...] [a b ...])
+       (quasitemplate/loc/props this-syntax
+         (?#%type:app* #,(quasisyntax/loc #'head (#%type:con #,(syntax/loc #'head fn)))
+                       μ
+                       a
+                       (?fn* [π ...] [b ...])))]))
+
+  ;; --------------------------------------------
+  ;; syntax helpers for “->” (unrestricted function)
+
+  (define-syntax ~->
+    (pattern-expander
+     (syntax-parser [(_ a ...) #'{~fn {~Mw} a ...}])))
+
   (define-syntax-class nested-->s
     #:description #f
     #:attributes [[t 1]]
     #:commit
     #:literal-sets [type-literals]
-    [pattern (~-> ~! a b:nested-->s)
+    [pattern {~-> ~! a b:nested-->s}
              #:with [t ...] #'[a b.t ...]]
     [pattern a #:with [t ...] #'[a]])
 
@@ -361,9 +419,12 @@
       [(_ a) #'a]
       [(head a b c ...)
        (quasitemplate/loc/props this-syntax
-         (?#%type:app* #,(quasisyntax/loc #'head (#%type:con #,(syntax/loc #'head ->)))
+         (?#%type:app* #,(quasisyntax/loc #'head (#%type:con #,(syntax/loc #'head fn)))
+                       (#%type:con Mw)
                        a
-                       (?->* b c ...)))])))
+                       (?->* b c ...)))]))
+
+  )
 
 ;; ---------------------------------------------------------------------------------------------------
 ;; type and value namespaces
