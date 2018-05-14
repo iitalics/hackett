@@ -7,6 +7,8 @@
          #%opaque
          (for-syntax sig
                      decl
+                     expand-sig
+                     expand-decl
                      sig-literals
                      ))
 
@@ -69,6 +71,15 @@
   (define-expansion-class sig "sig" expanded-sig sig-literal-ids)
   (define-expansion-class decl "sig declaration" expanded-decl sig-literal-ids)
 
+  (define (expand-sig stx [intdef-ctx #f])
+    (syntax-parse stx
+      [{~var S (sig intdef-ctx)}
+       #'S.expansion]))
+
+  (define (expand-decl stx [intdef-ctx #f])
+    (syntax-parse stx
+      [{~var D (decl intdef-ctx)}
+       #'D.expansion]))
   
   ;; ---------------------------------------------
 
