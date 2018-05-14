@@ -45,7 +45,7 @@
              (expand-sig
               #'(sig
                  (type Y)
-                 (type X = X)
+                 (type X = Y)
                  (val x : X)))
              S)
 
