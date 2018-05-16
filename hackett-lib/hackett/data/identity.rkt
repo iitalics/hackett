@@ -1,11 +1,10 @@
 #lang hackett
 
+(require hackett/record)
 (provide (data Identity) run-identity)
 
-(data (Identity a) (Identity a))
-
-(defn run-identity : (forall [a] {(Identity a) -> a})
-  [[(Identity x)] x])
+(def-record (Identity a)
+  run-identity : a)
 
 (instance (forall [a] (Show a) => (Show (Identity a)))
   [show (λ [(Identity x)] {"(Identity " ++ (show x) ++ ")"})])

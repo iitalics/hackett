@@ -1,14 +1,13 @@
 #lang hackett
 
-(require hackett/data/identity
+(require hackett/record
+         hackett/data/identity
          hackett/monad/trans)
 
 (provide (data ErrorT) run-error-t run-error throw catch)
 
-(data (ErrorT e m a) (ErrorT (m (Either e a))))
-
-(defn run-error-t : (forall [e m a] {(ErrorT e m a) -> (m (Either e a))})
-  [[(ErrorT x)] x])
+(def-record (ErrorT e m a)
+  run-error-t : (m (Either e a)))
 
 (defn run-error : (forall [e a] {(ErrorT e Identity a) -> (Either e a)})
   [[x] (run-identity (run-error-t x))])

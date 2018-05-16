@@ -1,14 +1,13 @@
 #lang hackett
 
-(require hackett/data/identity
+(require hackett/record
+         hackett/data/identity
          hackett/monad/trans)
 
 (provide (data ReaderT) run-reader-t run-reader ask asks local)
 
-(data (ReaderT r m a) (ReaderT {r -> (m a)}))
-
-(defn run-reader-t : (forall [r m a] {(ReaderT r m a) -> r -> (m a)})
-  [[(ReaderT f)] f])
+(def-record (ReaderT r m a)
+  run-reader-t : {r -> (m a)})
 
 (defn run-reader : (forall [r a] {(ReaderT r Identity a) -> r -> a})
   [[x r] (run-identity (run-reader-t x r))])
