@@ -15,7 +15,7 @@
          hackett/private/prim/type
          syntax/parse/define)
 
-(provide not || && if fst snd foldr unsafe-run-io!
+(provide not || && if foldr unsafe-run-io!
 
          . $ & id const flip
 
@@ -44,12 +44,6 @@
 (defn if : (forall [a] {Bool -> a -> a -> a})
   [[True  x _] x]
   [[False _ y] y])
-
-(defn fst : (forall [a b] {(Tuple a b) -> a})
-  [[(Tuple x _)] x])
-
-(defn snd : (forall [a b] {(Tuple a b) -> b})
-  [[(Tuple _ x)] x])
 
 (defn foldr : (forall [a b] {{a -> b -> b} -> b -> (List a) -> b})
   [[f a {x :: xs}] (f x (foldr f a xs))]
