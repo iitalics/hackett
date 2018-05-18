@@ -4,15 +4,16 @@
  (only-in hackett/private/prim/type-provide typed-out)
  (only-in hackett/private/type-reqprov for-type only-types-in unmangle-types-in)
 
- hackett/private/base
+ racket/match
  (unmangle-types-in #:no-introduce (only-types-in hackett/private/prim/type))
  (unmangle-types-in #:no-introduce (only-types-in hackett/data/list/racket))
+ (only-in hackett/private/base
+          define-base-type : String Integer)
  (only-in hackett/private/prim/type
           [Unit MkUnit] [Tuple MkTuple] [IO MkIO])
 
  (postfix-in - (combine-in racket/base
                            racket/promise))
- (prefix-in lazy: lazy)
  (for-syntax racket/base syntax/parse hackett/private/typecheck))
 
 (define-base-type Char)
@@ -41,4 +42,11 @@
   (format "~v" (force- c)))
 
 (define (racket-list->string l)
-  (list->string- (lazy:!!list l)))
+  (define p (open-output-string))
+  (let loop ([l l])
+    (match (force- l)
+      ['() (begin0 (get-output-string p)
+             (close-output-port p))]
+      [(cons c rst)
+       (write-char (force- c) p)
+       (loop rst)])))
