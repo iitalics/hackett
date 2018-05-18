@@ -31,5 +31,6 @@
    #'(begin
        (printf "inferred: ")
        (pretty-write 'sig)
-       (printf "\nexpanded module body: ")
-       (pretty-write 'm-))])
+       (define name m-)
+       (printf "\nmodule body: ")
+       (pretty-write name))])
