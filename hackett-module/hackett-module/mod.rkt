@@ -57,7 +57,7 @@
 
 (define-syntax-parser mod
   [(_ defn ...)
-   #'(#%module-begin
+   #'(hkt:#%module-begin
       (mod/acc
        []
        defn ...))])
