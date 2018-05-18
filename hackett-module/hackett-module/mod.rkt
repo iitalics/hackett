@@ -46,6 +46,7 @@
             define-syntaxes
             #%require
             #%provide
+            #%expression
             } . _)
       #'(begin defn- (mod/acc [ent/rev ...] rest-defn ...))]
 
