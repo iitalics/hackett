@@ -26,7 +26,29 @@
           #'#%require
           #'#%provide
           ))
+
+  (define-syntax-class hackett-module-component
+    #:literal-sets [mod-stop-literals]
+    #:attributes [sig-entry]
+    [pattern (hkt:: id:id {~type type:expr} {~optional #:exact})
+             #:with sig-entry #'(sig:val id : type)]
+    [pattern (hkt:type {~type spec} {~type rhs:expr})
+             #:fail-unless (identifier? #'spec)
+             "type aliases with arguments not allowed in modules"
+             #:with sig-entry #'(sig:type id = rhs)])
+
+  (define-syntax-class pass-through
+    #:literal-sets [mod-stop-literals]
+    [pattern ({~or define-values
+                   define-syntaxes
+                   #%require
+                   #%provide
+                   #%expression
+                   }
+              . _)])
+
   )
+
 
 (define-syntax-parser mod/acc
   [(_ [sig-entry/rev ...])
@@ -42,19 +64,11 @@
      [(begin form ...)
       #'(mod/acc [ent/rev ...] form ... rest-defn ...)]
 
-     [({~or define-values
-            define-syntaxes
-            #%require
-            #%provide
-            #%expression
-            } . _)
-      #'(begin defn- (mod/acc [ent/rev ...] rest-defn ...))]
+     [d:hackett-module-component
+      #'(begin defn- (mod/acc [d.sig-entry ent/rev ...] rest-defn ...))]
 
-     [(hkt:: id:id {~type type:expr} {~optional #:exact})
-      #'(begin defn- (mod/acc [(sig:val id : type) ent/rev ...] rest-defn ...))]
-
-     [(hkt:type {~type id:id} {~type rhs:expr})
-      #'(begin defn- (mod/acc [(sig:type id = rhs) ent/rev ...] rest-defn ...))])])
+     [:pass-through
+      #'(begin defn- (mod/acc [ent/rev ...] rest-defn ...))])])
 
 (define-syntax-parser mod
   [(_ defn ...)
