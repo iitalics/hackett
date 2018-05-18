@@ -10,6 +10,7 @@
                      expand-sig
                      expand-decl
                      sig-literals
+                     sig-internal-ids
                      ))
 
 (require syntax/parse/define
@@ -144,6 +145,15 @@
       #:attr expansion this-syntax
       #:attr residual (residual #'[expansion]
                                 #'type-decl)])
+
+  ;; -----------------------------------------------------------------
+
+  ;; Sig -> [Hashof Symbol Identifier]
+  (define (sig-internal-ids s)
+    (syntax-parse s
+      #:literal-sets [sig-literals]
+      [(sig:#%sig internal-ids:hash-literal _)
+       (attribute internal-ids.value)]))
 
   )
       
