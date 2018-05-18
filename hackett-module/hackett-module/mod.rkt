@@ -7,7 +7,9 @@
  (prefix-in hkt: hackett/base)
  (prefix-in sig: "sig.rkt")
  (for-syntax racket/base
-             syntax/parse))
+             syntax/parse
+             syntax/kerncase
+             syntax/id-set))
 
 (provide
  mod)
@@ -27,6 +29,24 @@
           #'#%provide
           ))
 
+  (define kernel-id-set
+    (immutable-free-id-set (kernel-form-identifier-list)))
+  (define kernel-known-expr-id-set
+    (immutable-free-id-set (list #'#%expression
+                                 #'#%plain-lambda
+                                 #'case-lambda
+                                 #'if
+                                 #'begin0 ; not begin!
+                                 #'let-values
+                                 #'letrec-values
+                                 #'set!
+                                 #'quote
+                                 #'quote-syntax
+                                 #'with-continuation-mark
+                                 #'#%plain-app
+                                 #'#%top
+                                 #'#%variable-reference)))
+
   (define-syntax-class hackett-module-component
     #:literal-sets [mod-stop-literals]
     #:attributes [sig-entry]
@@ -37,13 +57,29 @@
              "type aliases with arguments not allowed in modules"
              #:with sig-entry #'(sig:type id = rhs)])
 
+  ;; Id -> Bool
+  (define (variable-id? x)
+    (define sym (gensym 'fail))
+    ;; bound
+    (and (identifier-binding x)
+         ;; not a macro
+         (eq? sym (syntax-local-value x (λ () sym)))
+         ;; not a core form
+         (not (free-id-set-member? kernel-id-set x))))
+
   (define-syntax-class pass-through
     #:literal-sets [mod-stop-literals]
+    ;; pass-through these types of definitions
     [pattern ({~or define-values
                    define-syntaxes
-                   #%expression
                    }
-              . _)])
+              . _)]
+    ;; pass-through known expressions
+    [pattern x:id  #:when (variable-id? #'x)]
+    [pattern (head:id . _)
+             #:when
+             (or (free-id-set-member? kernel-known-expr-id-set #'head)
+                 (variable-id? #'head))])
 
   (define-syntax-class disallowed
     #:literal-sets [mod-stop-literals]
@@ -86,7 +122,6 @@
 
   [(_ [ent/rev ...] defn rest-defn ...)
    #:with defn- (local-expand #'defn 'module mod-stop-ids)
-   #:do [(printf "~s\n" #'defn-)]
    (syntax-parse #'defn-
      #:literal-sets [mod-stop-literals]
 
@@ -121,6 +156,7 @@
    (syntax-property #'(let ()
                         pre-defn- ...
                         post-defn- ...
+                        ;; TODO: fill in references to the definitions into the hash
                         (hash))
      'sig:
      (syntax-local-introduce
