@@ -49,5 +49,41 @@
          >>=
          (uncurry parse)})))])
 
+(instance (forall [s a] (Semigroup a) => (Semigroup (Parse s a)))
+  [++ (λ [px py] {++ <$> px <*> py})])
+
+(instance (forall [s a] (Monoid a) => (Monoid (Parse s a)))
+  [mempty (pure mempty)])
+
 ;; --------
 ;; combinators
+
+(def any : (forall [s] (Parse s s))
+  (Parse
+   (λ* [[Nil] Nil]
+       [[{x :: xs}] {(Tuple x xs) :: Nil}])))
+
+(defn when : (forall [s a] {{a -> Bool} -> (Parse s a) -> (Parse s a)})
+  [[f px]
+   (Parse
+    (λ [in]
+      (filter {f . fst} (parse px in))))])
+
+(defn one-of : (forall [s] (Eq s) => {(List s) -> (Parse s s)})
+  [[xs] (when (flip elem? xs) any)])
+
+(defn +++ : (forall [s a] {(Parse s a) -> (Parse s a) -> (Parse s a)})
+  [[px py] (Parse (λ [in] {(parse px in) ++ (parse py in)}))])
+
+(defn seq : (forall [s a b] {(Parse s a) -> (Parse s b) -> (Parse s (Tuple a b))})
+  [[px py] {Tuple <$> px <*> py}])
+
+(defn many : (forall [s a] {(Parse s a) -> (Parse s (List a))})
+  [[p] {(pure Nil) +++ (many1 p)}])
+
+(defn many1 : (forall [s a] {(Parse s a) -> (Parse s (List a))})
+  [[p] {:: <$> p <*> (many p)}])
+
+(defn sep-by : (forall [s a sep] {(Parse s a) -> (Parse s sep) -> (Parse s (List a))})
+  [[p sep]
+   {:: <$> p <*> (many {(flip const) <$> sep <*> p})}])
