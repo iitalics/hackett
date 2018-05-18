@@ -153,11 +153,19 @@
            m:mod/acc-sig
            post-defn- ...) #'modbeg-
 
+   ;; TODO: produce identifiers to reference val definitions from the sig
+   #|
+   #:with [[sig-val-sym sig-val-id] ...]
+   (hash-map (sig-internal-ids (attribute m.sig)) list)
+   #:with [[sig-val-sym/id ...] ...]
+   #'[['sig-val-sym sig-val-id] ...]
+   |#
+
    (syntax-property #'(let ()
                         pre-defn- ...
                         post-defn- ...
                         ;; TODO: fill in references to the definitions into the hash
-                        (hash))
+                        (hash #|sig-val-sym/id ... ...|#))
      'sig:
      (syntax-local-introduce
       (attribute m.sig)))])
