@@ -16,3 +16,44 @@ How should we deal with different lambda behaviors in value context vs. module c
 
 (4) would require flipping/unflipping scopes when we "switch" contexts, and what about providing and requiring? Hackett has all this weird infrastructure for requiring and providing types, would we have to re-implement that or could we reuse?
 
+-------------------------------------
+
+For (1)
+
+(define-syntax lambda ....value-lambda-stuff....)
+
+(define-syntax module-lambda ....module-lambda-stuff....)
+
+-------------------------------------
+
+For (2)
+
+(define (sc-module m-stx)
+  (define m-
+    (local-expand (syntax-property m-stx 'overloading-context 'module)
+                  ....))
+  ....)
+
+(define (tc-expr e-stx)
+  (define e-
+    (local-expand (syntax-property e-stx 'overloading-context 'expression)
+                  ....))
+  ....)
+
+-------------------------------------
+
+For (4)
+
+Require/namespace-in takes imports like this:
+
+#%namespace:value:x
+#%namespace:value:y
+#%namespace:value:z
+#%namespace-introducer:value
+
+#%namespace:type:x
+#%namespace:type:t
+#%namespace-introducer:type
+
+And imports them as with the scopes from the introducers?
+
