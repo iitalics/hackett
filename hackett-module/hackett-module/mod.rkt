@@ -9,7 +9,8 @@
  (for-syntax racket/base
              syntax/parse
              syntax/kerncase
-             syntax/id-set))
+             syntax/id-set
+             "check/expand-check.rkt"))
 
 (provide
  mod)
@@ -51,8 +52,8 @@
     #:attributes [sig-entry [val-id 1]]
     #:literal-sets [mod-stop-literals]
     ;; NOTE: we are not introducing the type namespace
-    ;;   here, because they will be introduced by 'sig:val'
-    ;;   and 'sig:type' (the surface syntax).
+    ;;   here, because they will be introduced by `sig:val`
+    ;;   and `sig:type` (the surface syntax).
     [pattern (hkt:: id:id type:expr {~optional #:exact})
              #:with sig-entry #'(sig:val id : type)
              #:with [val-id ...] #'[id]]
@@ -174,11 +175,10 @@
    #:with [[sig-val-sym/id ...] ...]
    #'[['m.val-id m.val-id] ...]
 
-   (syntax-property #'(let ()
-                        pre-defn- ...
-                        post-defn- ...
-                        ;; TODO: fill in references to the definitions into the hash
-                        (hash sig-val-sym/id ... ...))
-     'sig:
-     (syntax-local-introduce
-      (attribute m.sig)))])
+   (attach-sig
+    #'(let ()
+        pre-defn- ...
+        post-defn- ...
+        ;; TODO: fill in references to the definitions into the hash
+        (hash sig-val-sym/id ... ...))
+    (attribute m.sig))])
