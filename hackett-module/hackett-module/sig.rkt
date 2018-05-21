@@ -8,13 +8,13 @@
 (require syntax/parse/define
          "rep/sig.rkt"
          hackett/private/type-language
+         (only-in hackett/base type)
          (for-syntax racket/base
                      syntax/parse
                      hackett/private/util/stx
                      ))
 
 (define-syntax val #f)
-(define-syntax type #f)
 
 (begin-for-syntax
   (define-syntax-class sig-entry
