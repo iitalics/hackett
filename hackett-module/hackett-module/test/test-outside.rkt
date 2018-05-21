@@ -19,3 +19,5 @@
 (def-module F
   (λₘ ([m : (sig)]) m))
 
+(def-module FM (appₘ F M))
+

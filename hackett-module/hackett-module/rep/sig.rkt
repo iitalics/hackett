@@ -1,6 +1,7 @@
 #lang racket/base
 
 (provide #%sig
+         #%pi-sig
          #%val-decl
          #%type-decl
          #%alias
@@ -9,6 +10,8 @@
                      decl
                      expand-sig
                      expand-decl
+                     signature-substs
+                     sig->string
                      sig-literals
                      sig-internal-ids
                      ))
@@ -88,6 +91,19 @@
     (syntax-parse stx
       [{~var D (decl intdef-ctx)}
        #'D.expansion]))
+
+  (define (signature-substs S xs/vs)
+    (define/syntax-parse ([x v] ...) xs/vs)
+    ;; create a context where each `x` is bound to its `v`
+    (define ctx (syntax-local-make-definition-context))
+    (syntax-local-bind-syntaxes
+     (attribute x)
+     #'(values (make-variable-like-transformer (quote-syntax v)) ...)
+     ctx)
+    (expand-sig S ctx))
+
+  (define (sig->string S)
+    (format "~v" (syntax->datum S)))
   
   ;; ---------------------------------------------
 

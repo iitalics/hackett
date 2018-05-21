@@ -10,12 +10,14 @@
  (for-syntax racket/base
              racket/syntax
              syntax/parse
-             hackett/private/util/stx))
+             hackett/private/util/stx
+             "check/sig-matches.rkt"))
 
 (provide
  def-module
  λₑ
- λₘ)
+ λₘ
+ appₘ)
 
 (begin-for-syntax
   (define (attach-sig stx s)
@@ -60,17 +62,33 @@
 
    ;; create a context where x is bound
    #:do [(define ctx (syntax-local-make-definition-context))
-         (syntax-local-bind-syntaxes
-          (list #'x-)
-          #f
-          ctx)
-         (syntax-local-bind-syntaxes
-          (list #'x)
-          #'(make-module-var-transformer (quote-syntax x-)
-                                         (quote-syntax A.expansion))
-          ctx)]
+         (syntax-local-bind-syntaxes (list #'x-)
+                                     #f
+                                     ctx)
+         (syntax-local-bind-syntaxes (list #'x)
+                                     #'(make-module-var-transformer
+                                        (quote-syntax x-)
+                                        (quote-syntax A.expansion))
+                                     ctx)]
    #:with x-- (internal-definition-context-introduce ctx #'x-)
 
    #:with [body- B] (sig⇒ #'body ctx)
    (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B))])
+
+(define-syntax-parser appₘ
+  #:literals [#%pi-sig]
+  [(_ f:expr a:id)
+   ;; TODO: allow module paths for `a`, or module expressions if possible
+
+   #:with [f- (#%pi-sig ([x A]) B)] (sig⇒ #'f)
+   #:with [a- A*] (sig⇒ #'a)
+
+   #:do [(unless (signature-matches? #'A* #'A)
+           (raise-syntax-error #f
+             (format "signature mismatch\n  expected: ~a\n  given:    ~a"
+                     (sig->string #'A) (sig->string #'A*))
+             #'a))]
+   #:with B* (signature-substs #'B #'([x a]))
+   (attach-sig #'(#%app f- a-)
+               #'B*)])
 

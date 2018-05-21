@@ -1,6 +1,7 @@
 #lang racket/base
 
-(provide sig-matches?)
+(provide signature-matches?
+         sig-matches?)
 
 (require (for-template "../rep/sig.rkt")
          racket/syntax
@@ -10,6 +11,15 @@
          hackett/private/typecheck
          "../util/stx.rkt"
          )
+
+;; A Signature is one of:
+;;  - Sig
+;;  - PiSig
+
+;; Signature Signature -> Boolean
+(define (signature-matches? A B)
+  ;; TODO: call either sig-matches or pi-sig-matches depending
+  (sig-matches? A B))
 
 ;; Sig Sig -> Boolean
 (define (sig-matches? A* B*)
