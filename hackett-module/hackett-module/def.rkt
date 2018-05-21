@@ -45,12 +45,13 @@
    #:with [m- sig] (sig⇒ #'m)
    #:with name- (generate-temporary #'name)
    #'(begin
+       (printf "\n---------\nbinding: ~a\n" 'name)
        (printf "inferred: ")
        (pretty-write 'sig)
        (define-syntax name
          (make-module-var-transformer (quote-syntax name-) (quote-syntax sig)))
        (define name- m-)
-       (printf "\nmodule body: ")
+       (printf "module body: ")
        (pretty-write name))])
 
 (define-syntax λₑ (make-rename-transformer #'hkt:λ))
@@ -59,6 +60,25 @@
   #:datum-literals [:]
   [(_ ([x:id : A:sig]) body:expr)
    #:with x- (generate-temporary #'x)
+
+   ;; ===========
+   ;; TODO:
+   ;;   - for every opaque type T in A, generate a
+   ;;     temporary T- for it, and create a mapping from
+   ;;     the type symbol names to those temporaries.
+   ;;
+   ;;   - we can make a compile time binding for 'x' that
+   ;;     includes:
+   ;;       internal id  (x-)
+   ;;       signature    (A.expansion)
+   ;;       type mapping (T => T-)
+   ;;
+   ;;   - expand functor body with this compile time binding
+   ;;     for 'x'. additionally, each T- will need to be bound
+   ;;     as values (so they won't expand).
+   ;;
+   ;;   - figure out: how to substitute T- back into (#%dot M T)
+   ;;     during e.g. application.
 
    ;; create a context where x is bound
    #:do [(define ctx (syntax-local-make-definition-context))
@@ -91,4 +111,3 @@
    #:with B* (signature-substs #'B #'([x a]))
    (attach-sig #'(#%app f- a-)
                #'B*)])
-
