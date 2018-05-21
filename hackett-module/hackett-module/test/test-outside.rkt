@@ -13,3 +13,5 @@
    (foo 3)
 
    ))
+
+(def-module M* M)
