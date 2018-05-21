@@ -9,6 +9,7 @@
  (prefix-in sig: "sig.rkt")
  (for-syntax racket/base
              racket/syntax
+             racket/list
              syntax/parse
              hackett/private/util/stx
              "check/sig-matches.rkt"
@@ -24,13 +25,16 @@
   [(_ name:id m:expr)
    #:with [m- sig] (sig⇒ #'m)
    #:with name- (generate-temporary #'name)
+
+   #:with [[id transformer] ...]
+   (generate-module-var-bindings #'name #'name- #'sig)
+
    #'(begin
        (printf "\n---------\nbinding: ~a\n" 'name)
        (printf "inferred: ")
        (pretty-write 'sig)
-       (define-syntax name
-         (make-module-var-transformer (quote-syntax name-) (quote-syntax sig)))
        (define name- m-)
+       (define-syntaxes [id ...] (values transformer ...))
        (printf "module body: ")
        (pretty-write name))])
 
@@ -65,19 +69,22 @@
    ;; #%pi-sig will have to apply these same steps during expansion.
 
    ;; create a context where x is bound
-   #:do [(define ctx (syntax-local-make-definition-context))
-         (syntax-local-bind-syntaxes (list #'x-)
-                                     #f
-                                     ctx)
-         (syntax-local-bind-syntaxes (list #'x)
-                                     #'(make-module-var-transformer
-                                        (quote-syntax x-)
-                                        (quote-syntax A.expansion))
-                                     ctx)]
+   #:do [(define bindings
+           (generate-module-var-bindings
+            #'x
+            #'x-
+            #'A.expansion))
+         (define ctx (syntax-local-make-definition-context))
+         (syntax-local-bind-syntaxes (list #'x-) #f ctx)
+         (syntax-local-bind-syntaxes
+          (map first bindings)
+          #`(values #,@(map second bindings))
+          ctx)]
+
    #:with x-- (internal-definition-context-introduce ctx #'x-)
 
    #:with [body- B] (sig⇒ #'body ctx)
-   #:with B* (reintroduce-#%dot #'x #'B ctx)
+   ;; #:with B* (reintroduce-#%dot #'x #'B ctx)
    (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B))])
 
 (define-syntax-parser appₘ

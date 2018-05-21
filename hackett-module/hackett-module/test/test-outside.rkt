@@ -17,7 +17,6 @@
 (def-module M* M)
 
 (def-module F
-  (λₘ ([m : (sig)]) m))
+  (λₘ ([m : (sig (type X))]) m))
 
 (def-module FM (appₘ F M))
-
