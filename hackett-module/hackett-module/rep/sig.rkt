@@ -14,6 +14,8 @@
                      sig->string
                      sig-literals
                      sig-internal-ids
+                     sig-decls
+                     decl-type-opaque?
                      ))
 
 (require syntax/parse/define
@@ -149,7 +151,7 @@
             (define (intro stx)
               (internal-definition-context-introduce intdef-ctx* stx))
             (syntax-local-bind-syntaxes (list #'x) #f intdef-ctx*)]
-      #:with x- (intro #'x) 
+      #:with x- (intro #'x)
 
       #:with {~var B* (sig intdef-ctx*)} #'B
       #:attr expansion (~>> (syntax/loc/props this-syntax
@@ -195,7 +197,18 @@
       [(sig:#%sig internal-ids:hash-literal _)
        (attribute internal-ids.value)]))
 
+  ;; Sig -> [Hashof Symbol Decl]
+  (define (sig-decls s)
+    (syntax-parse s
+      #:literal-sets [sig-literals]
+      [(sig:#%sig _ decls:hash-literal)
+       (attribute decls.value)]))
+
+  ;; Decl -> Bool
+  (define (decl-type-opaque? d)
+    (syntax-parse d
+      #:literal-sets [sig-literals]
+      [(#%type-decl (#%opaque)) #t]
+      [_ #f]))
+
   )
-      
-
-
