@@ -15,3 +15,7 @@
    ))
 
 (def-module M* M)
+
+(def-module F
+  (λₘ ([m : (sig)]) m))
+
