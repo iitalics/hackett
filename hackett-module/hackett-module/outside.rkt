@@ -3,7 +3,7 @@
          hackett/prelude
          "def.rkt"
          "mod.rkt"
-         (except-in "sig.rkt" type))
+         "sig.rkt")
 (provide
  (all-from-out hackett/base)
  (all-from-out hackett/prelude)
