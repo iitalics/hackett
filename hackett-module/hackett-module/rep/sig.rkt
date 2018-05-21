@@ -33,6 +33,11 @@
 ;; in all the decls
 (define-syntax #%sig #f)
 
+;; (#%pi-sig
+;;   ([param-id sig])
+;;   sig)
+(define-syntax #%pi-sig #f)
+
 ;; A Decl is one of:
 ;;  - (#%val-decl Type)
 ;;  - (#%type-decl (#%alias Type))
@@ -46,10 +51,12 @@
 (begin-for-syntax
   (define sig-literal-ids
     (list #'#%sig
+          #'#%pi-sig
           #'#%val-decl #'#%type-decl #'#%alias #'#%opaque))
 
   (define-literal-set sig-literals
     [#%sig
+     #%pi-sig
      #%val-decl #%type-decl #%alias #%opaque])
 
   (define (residual origs id)
@@ -117,6 +124,23 @@
                                     decls-expansion-))
                             (internal-definition-context-track intdef-ctx*))
       #:attr residual (residual #'[decl-.residual ... expansion]
+                                #'head)]
+
+    ;; (#%pi-sig ([param-id sig]) sig)
+    [pattern (head:#%pi-sig ([x:id {~var A (sig intdef-ctx)}]) B:expr)
+      ;; create a context where x is bound
+      #:do [(define intdef-ctx* (syntax-local-make-definition-context intdef-ctx))
+            (define (intro stx)
+              (internal-definition-context-introduce intdef-ctx* stx))
+            (syntax-local-bind-syntaxes (list #'x) #f intdef-ctx*)]
+      #:with x- (intro #'x) 
+
+      #:with {~var B* (sig intdef-ctx*)} #'B
+      #:attr expansion (~>> (syntax/loc/props this-syntax
+                              (head ([x- A.expansion])
+                                    B*.expansion))
+                            (internal-definition-context-track intdef-ctx*))
+      #:attr residual (residual #'[A.residual B*.residual expansion]
                                 #'head)])
 
   (define-syntax-class (expanded-decl intdef-ctx)

@@ -13,15 +13,17 @@
              hackett/private/util/stx))
 
 (provide
- def-module)
+ def-module
+ λₑ
+ λₘ)
 
 (begin-for-syntax
   (define (attach-sig stx s)
     (syntax-property stx 'sig: s))
 
-  (define (sig⇒ stx)
+  (define (sig⇒ stx [ctx #f])
     (define m-
-      (local-expand stx 'module-begin '()))
+      (local-expand stx 'module-begin '() ctx))
     (define sig
       (syntax-local-introduce
        (syntax-property m- 'sig:)))
@@ -48,3 +50,27 @@
        (define name- m-)
        (printf "\nmodule body: ")
        (pretty-write name))])
+
+(define-syntax λₑ (make-rename-transformer #'hkt:λ))
+
+(define-syntax-parser λₘ
+  #:datum-literals [:]
+  [(_ ([x:id : A:sig]) body:expr)
+   #:with x- (generate-temporary #'x)
+
+   ;; create a context where x is bound
+   #:do [(define ctx (syntax-local-make-definition-context))
+         (syntax-local-bind-syntaxes
+          (list #'x-)
+          #f
+          ctx)
+         (syntax-local-bind-syntaxes
+          (list #'x)
+          #'(make-module-var-transformer (quote-syntax x-)
+                                         (quote-syntax A.expansion))
+          ctx)]
+   #:with x-- (internal-definition-context-introduce ctx #'x-)
+
+   #:with [body- B] (sig⇒ #'body ctx)
+   (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B))])
+
