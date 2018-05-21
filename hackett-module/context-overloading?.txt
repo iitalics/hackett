@@ -1,0 +1,18 @@
+
+Context overloading?
+
+How should we deal with different lambda behaviors in value context vs. module context.
+
+  1. Different syntaxes (different names)
+  2. A syntax property as input to lambda telling the context
+  3. A syntax parameter as "input" telling the context
+  4. Same name but different bindings with a "module" scope similar to the "type" scope
+
+(1) is easy
+
+(2) would require propogating this property in sig=>
+
+(3) would require inserting a syntax-parameterize in sig=>, and possibly other syntax-parameterize's to "turn it off" maybe
+
+(4) would require flipping/unflipping scopes when we "switch" contexts, and what about providing and requiring? Hackett has all this weird infrastructure for requiring and providing types, would we have to re-implement that or could we reuse?
+
