@@ -72,13 +72,17 @@
    ;;       internal id  (x-)
    ;;       signature    (A.expansion)
    ;;       type mapping (T => T-)
+   ;;   note: (#%dot x T) will expand into (#%type:con T-)
    ;;
    ;;   - expand functor body with this compile time binding
    ;;     for 'x'. additionally, each T- will need to be bound
-   ;;     as values (so they won't expand).
+   ;;     as values (so that #%type:con is valid, free-id= is not broken etc.).
    ;;
-   ;;   - figure out: how to substitute T- back into (#%dot M T)
-   ;;     during e.g. application.
+   ;;   - traverse the types in the output signature B, replacing
+   ;;     (#%type:con T-) with (#%dot x T). do NOT re-expand B after
+   ;;     substituting.
+   ;;
+   ;; #%pi-sig will have to apply these same steps during expansion.
 
    ;; create a context where x is bound
    #:do [(define ctx (syntax-local-make-definition-context))
@@ -93,6 +97,7 @@
    #:with x-- (internal-definition-context-introduce ctx #'x-)
 
    #:with [body- B] (sig⇒ #'body ctx)
+   #:with B* (reintroduce-#%dot #'x #'B ctx)
    (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B))])
 
 (define-syntax-parser appₘ
