@@ -49,12 +49,14 @@
 
   (define-syntax-class hackett-module-component
     #:attributes [sig-entry [val-id 1]]
-
     #:literal-sets [mod-stop-literals]
-    [pattern (hkt:: id:id {~type type:expr} {~optional #:exact})
+    ;; NOTE: we are not introducing the type namespace
+    ;;   here, because they will be introduced by 'sig:val'
+    ;;   and 'sig:type' (the surface syntax).
+    [pattern (hkt:: id:id type:expr {~optional #:exact})
              #:with sig-entry #'(sig:val id : type)
              #:with [val-id ...] #'[id]]
-    [pattern (hkt:type {~type spec} {~type rhs:expr})
+    [pattern (hkt:type spec rhs:expr)
              #:fail-unless (identifier? #'spec)
              "type aliases with arguments not allowed in modules"
              #:with sig-entry #'(sig:type spec = rhs)
