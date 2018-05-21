@@ -7,6 +7,7 @@
 
 (require syntax/parse/define
          "rep/sig.rkt"
+         hackett/private/type-language
          (for-syntax racket/base
                      syntax/parse
                      hackett/private/util/stx
@@ -20,11 +21,11 @@
     #:attributes [id norm]
     #:literals [val type]
     #:datum-literals [: =]
-    [pattern (val id:id : val-type:expr)
+    [pattern (val id:id : {~type val-type:expr})
       #:with norm #'(#%val-decl val-type)]
-    [pattern (type id:id)
+    [pattern (type {~type id:id})
       #:with norm #'(#%type-decl (#%opaque))]
-    [pattern (type id:id = alias-type:expr)
+    [pattern (type {~type id:id} = {~type alias-type:expr})
       #:with norm #'(#%type-decl (#%alias alias-type))]))
 
 (define-syntax-parser sig
@@ -43,4 +44,3 @@
     (define-syntax name
       (make-variable-like-transformer
        #'sig-expr.expansion))))
-
