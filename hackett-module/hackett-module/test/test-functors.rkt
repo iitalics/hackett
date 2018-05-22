@@ -27,15 +27,28 @@
 
 ;; ======================
 
-#;
 (def-signature TYPES
   (sig
     (type T)
     (type U)))
 
-#;
 (def-module ReorderTypes
   (λₘ ([M : TYPES])
     (mod
       (type T M.U)
       (type U M.T))))
+;; should be shown as:
+;inferred:
+;(#%pi-sig
+; ((M33
+;   (#%sig
+;    #hash((T . T) (U . U))
+;    #hash((T . (#%type-decl (#%opaque))) (U . (#%type-decl (#%opaque)))))))
+; (#%sig
+;  #hash((T . T) (U . U))
+;  #hash((T . (#%type-decl (#%alias (#%dot M33 U))))
+;        (U . (#%type-decl (#%alias (#%dot M33 T)))))))
+
+;; If it doesn't say `#%dot` here and says
+;; `(#%type:con opaque:M.U34)` or something it's wrong!
+
