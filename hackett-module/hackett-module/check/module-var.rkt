@@ -12,7 +12,7 @@
  (only-in syntax/parse [attribute @])
  syntax/parse/class/local-value
  hackett/private/util/stx
- "expand-check.rkt"
+ "expand-check-prop.rkt"
  "../util/stx.rkt"
  (for-template "../rep/sig-literals.rkt")
  (for-template hackett/private/type-language))
@@ -34,7 +34,7 @@
      stx)))
 
 (struct opaque-type-constructor
-  [module-id
+  [module-internal-id
    external-sym])
 
 ;; Generates bindings needed to introduce a module with the
@@ -60,7 +60,7 @@
                [id (in-list opaque-type-ids)])
       (list id
             #`(opaque-type-constructor
-               (quote-syntax #,name)
+               (quote-syntax #,internal-id)
                '#,sym))))
 
   (define/syntax-parse [sym ...] opaque-type-syms)

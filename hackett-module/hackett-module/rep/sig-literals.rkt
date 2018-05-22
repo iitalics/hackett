@@ -9,6 +9,7 @@
          (for-syntax sig-literals
                      sig-literal-ids
                      ; ---
+                     sig->string
                      sig-internal-ids
                      sig-decls
                      decl-type?
@@ -58,6 +59,10 @@
 ;; -----------------------------------------------------------------
 
 (begin-for-syntax
+
+  ;; Sig -> String
+  (define (sig->string S)
+    (format "~v" (syntax->datum S)))
 
   ;; Sig -> [Hashof Symbol Identifier]
   (define (sig-internal-ids s)

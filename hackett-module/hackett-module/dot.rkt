@@ -67,12 +67,15 @@
     disappeared-use
     (syntax-local-introduce #'m))])
 
+;; -------------------------------------------
+
 (begin-for-syntax
   ;; the ctx contains a module-binding for m-dots-are-from-id
   ;; ASSUME s-to-reintro is already expanded
-  (define (reintroduce-#%dot m-dots-are-from-id s-to-reintro ctx)
+  (define (reintroduce-#%dot m-prefix-id s-to-reintro ctx)
     ;; determine which opaque cons to substitute by comparing
-    ;; the module they're from to `m-dots-are-from-id` with free-id=?
+    ;; their mod internal id's with the prefix, to see if we should
+    ;; insert prefixes for them.
 
     (define (traverse stx)
       (syntax-parse stx
@@ -81,7 +84,7 @@
          (define x-value (syntax-local-value #'x #f ctx))
          (match x-value
            [(opaque-type-constructor mod-id external-sym)
-            #:when (free-identifier=? mod-id m-dots-are-from-id)
+            #:when (free-identifier=? mod-id m-prefix-id)
             ;; and if it is, actually do the reintroducing
             #`(#%dot_τ #,mod-id #,external-sym)]
            [_

@@ -94,9 +94,8 @@
           ctx)]
 
    #:with x-- (intro #'x-)
-
    #:with [body- B] (sig⇒ #'body ctx)
-   #:with B* (reintroduce-#%dot (intro #'x) #'B ctx)
+   #:with B* (reintroduce-#%dot #'x-- #'B ctx)
    (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B*))])
 
 (define-syntax-parser appₘ

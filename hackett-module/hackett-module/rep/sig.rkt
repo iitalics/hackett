@@ -4,18 +4,22 @@
          decl
          expand-sig
          expand-decl
-         signature-substs
-         sig->string)
+         signature-substs)
 
-(require syntax/parse
+(require racket/syntax
+         racket/list
+         syntax/parse
          syntax/parse/define
          syntax/intdef
          threading
          hackett/private/util/stx
          hackett/private/typecheck
          "../util/stx.rkt"
+         "../check/module-var.rkt"
          (for-syntax racket/base)
-         (for-template racket/base "sig-literals.rkt"))
+         (for-template racket/base
+                       "../dot.rkt"
+                       "sig-literals.rkt"))
 
 ; helper for expanding signatures; combines "residual" properties
 (define (residual origs id)
@@ -57,9 +61,6 @@
    ctx)
   (expand-sig S ctx))
 
-(define (sig->string S)
-  (format "~v" (syntax->datum S)))
-
 ;; ---------------------------------------------
 
 (define-syntax-class (expanded-sig intdef-ctx)
@@ -98,18 +99,32 @@
 
   ;; (#%pi-sig ([param-id sig]) sig)
   [pattern (head:#%pi-sig ([x:id {~var A (sig intdef-ctx)}]) B:expr)
-           ;; create a context where x is bound
-           #:do [(define intdef-ctx* (syntax-local-make-definition-context intdef-ctx))
-                 (define (intro stx)
-                   (internal-definition-context-introduce intdef-ctx* stx))
-                 (syntax-local-bind-syntaxes (list #'x) #f intdef-ctx*)]
-           #:with x- (intro #'x)
+           #:with x- (generate-temporary #'x)
 
-           #:with {~var B* (sig intdef-ctx*)} #'B
+           ;; create a context where x is bound
+           #:do [(define bindings
+                   (generate-module-var-bindings
+                    #'x
+                    #'x-
+                    #'A.expansion))
+                 (define ctx (syntax-local-make-definition-context))
+                 (define (intro stx)
+                   (internal-definition-context-introduce ctx stx))
+
+                 (syntax-local-bind-syntaxes (list #'x-) #f ctx)
+                 (syntax-local-bind-syntaxes
+                  (map first bindings)
+                  #`(values #,@(map second bindings))
+                  ctx)]
+
+           #:with x-- (intro #'x-)
+           #:with {~var B* (sig ctx)} #'B
+           #:with B** (reintroduce-#%dot #'x-- #'B*.expansion ctx)
+
            #:attr expansion (~>> (syntax/loc/props this-syntax
-                                                   (head ([x- A.expansion])
-                                                         B*.expansion))
-                                 (internal-definition-context-track intdef-ctx*))
+                                                   (head ([x-- A.expansion])
+                                                         B**))
+                                 (internal-definition-context-track ctx))
            #:attr residual (residual #'[A.residual B*.residual expansion]
                                      #'head)])
 
