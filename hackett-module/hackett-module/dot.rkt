@@ -1,19 +1,22 @@
 #lang racket/base
 (provide
  #%dot_τ
- #%dot_e)
+ #%dot_e
+ (for-syntax reintroduce-#%dot))
 
 (require
  syntax/parse/define
  hackett/private/type-language
  "rep/sig.rkt"
  (for-syntax racket/base
+             racket/match
              racket/syntax
              syntax/parse
              (only-in syntax/parse [attribute @])
              hackett/private/typecheck
              hackett/private/util/stx
              "check/module-var.rkt"
+             "util/stx-traverse.rkt"
              (for-syntax racket/base
                          racket/syntax
                          syntax/parse)))
@@ -63,3 +66,28 @@
     #'t_qual.expansion
     disappeared-use
     (syntax-local-introduce #'m))])
+
+(begin-for-syntax
+  ;; the ctx contains a module-binding for m-dots-are-from-id
+  ;; ASSUME s-to-reintro is already expanded
+  (define (reintroduce-#%dot m-dots-are-from-id s-to-reintro ctx)
+    ;; determine which opaque cons to substitute by comparing
+    ;; the module they're from to `m-dots-are-from-id` with free-id=?
+
+    (define (traverse stx)
+      (syntax-parse stx
+        #:literals [#%type:con]
+        [(#%type:con x:id)
+         (define x-value (syntax-local-value #'x #f ctx))
+         (match x-value
+           [(opaque-type-constructor mod-id external-sym)
+            #:when (free-identifier=? mod-id m-dots-are-from-id)
+            ;; and if it is, actually do the reintroducing
+            #`(#%dot_τ #,mod-id #,external-sym)]
+           [_
+            stx])]
+        [_
+         (traverse-stx/recur stx traverse)]))
+
+    (traverse s-to-reintro)))
+       
