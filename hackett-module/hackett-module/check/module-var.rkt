@@ -14,7 +14,6 @@
  hackett/private/util/stx
  "expand-check.rkt"
  "../util/stx.rkt"
- "../rep/sig.rkt"
  (for-template "../rep/sig-literals.rkt")
  (for-template hackett/private/type-language))
 
