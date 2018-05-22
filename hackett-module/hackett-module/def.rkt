@@ -83,16 +83,19 @@
             #'x-
             #'A.expansion))
          (define ctx (syntax-local-make-definition-context))
+         (define (intro stx)
+           (internal-definition-context-introduce ctx stx))
+
          (syntax-local-bind-syntaxes (list #'x-) #f ctx)
          (syntax-local-bind-syntaxes
           (map first bindings)
           #`(values #,@(map second bindings))
           ctx)]
 
-   #:with x-- (internal-definition-context-introduce ctx #'x-)
+   #:with x-- (intro #'x-)
 
    #:with [body- B] (sig⇒ #'body ctx)
-   #:with B* (reintroduce-#%dot #'x #'B ctx)
+   #:with B* (reintroduce-#%dot (intro #'x) #'B ctx)
    (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B*))])
 
 (define-syntax-parser appₘ
