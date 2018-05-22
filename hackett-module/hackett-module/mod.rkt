@@ -17,6 +17,8 @@
  mod)
 
 (begin-for-syntax
+  (define disappeared-binding 'disappeared-binding)
+   
   (define-literal-set mod-stop-literals
     #:literal-sets [kernel-literals]
     [hkt:: hkt:type])
@@ -50,19 +52,25 @@
                                  #'#%variable-reference)))
 
   (define-syntax-class hackett-module-component
-    #:attributes [sig-entry [val-id 1]]
+    #:attributes [sig-entry [val-id 1] residual]
     #:literal-sets [mod-stop-literals]
     ;; NOTE: we are not introducing the type namespace
     ;;   here, because they will be introduced by `sig:val`
     ;;   and `sig:type` (the surface syntax).
     [pattern (hkt:: id:id type:expr {~optional #:exact})
              #:with sig-entry #'(sig:val id : type)
-             #:with [val-id ...] #'[id]]
+             #:with [val-id ...] #'[id]
+             #:with residual (syntax-property #'(values)
+                                              disappeared-binding
+                                              (syntax-local-introduce #'id))]
     [pattern (hkt:type spec rhs:expr)
              #:fail-unless (identifier? #'spec)
              "type aliases with arguments not allowed in modules"
              #:with sig-entry #'(sig:type spec = rhs)
-             #:with [val-id ...] #'[]])
+             #:with [val-id ...] #'[]
+             #:with residual (syntax-property #'(values)
+                                              disappeared-binding
+                                              (syntax-local-introduce #'spec))])
 
   ;; Id -> Bool
   (define (variable-id? x)
@@ -127,7 +135,7 @@
    #:with val-ids (reverse (attribute val-id/rev))
    #:with s:sig #'(sig:sig sig-entry ...)
    (syntax-property
-    (syntax-property #'(define-values [] (values))
+    (syntax-property #'(define-values [] s.residual)
       mod/acc-sig-prop
       (syntax-local-introduce
        (attribute s.expansion)))
@@ -135,7 +143,7 @@
     (syntax-local-introduce
      #'val-ids))]
 
-  [(_ [ent/rev ...] [v/rev ...] defn rest-defn ...)
+  [(head [ent/rev ...] [v/rev ...] defn rest-defn ...)
    #:with defn- (local-expand #'defn 'module mod-stop-ids)
    (syntax-parse #'defn-
      #:literal-sets [mod-stop-literals]
@@ -144,10 +152,13 @@
       #'(mod/acc [ent/rev ...] [v/rev ...] form ... rest-defn ...)]
 
      [d:hackett-module-component
-      #'(begin
-          defn-
-          (mod/acc [d.sig-entry ent/rev ...] [d.val-id ... v/rev ...]
-                   rest-defn ...))]
+      (syntax-track-origin
+       #'(begin
+           defn-
+           (mod/acc [d.sig-entry ent/rev ...] [d.val-id ... v/rev ...]
+                    rest-defn ...))
+       #'d.residual
+       #'head)]
 
      [:pass-through
       #'(begin defn- (mod/acc [ent/rev ...] [v/rev ...] rest-defn ...))]
@@ -181,6 +192,7 @@
    (attach-sig
     #'(let ()
         pre-defn- ...
+        m
         post-defn- ...
         ;; TODO: fill in references to the definitions into the hash
         (hash sig-val-sym/id ... ...))
