@@ -1,25 +1,21 @@
 #lang racket/base
 (provide
- attach-sig
  sig⇒
- sig⇐)
+ sig⇐
+ (all-from-out "expand-check-prop.rkt"))
 
 (require
  syntax/parse
  hackett/private/util/stx
+ "expand-check-prop.rkt"
  "sig-matches.rkt"
- (for-template "../rep/sig-literals.rkt")
- "../rep/sig.rkt")
+ (for-template "../rep/sig-literals.rkt"))
 
-(define (attach-sig stx s)
-  (syntax-property stx 'sig: s))
-
-(define (sig⇒ stx [ctx #f])
+(define (sig⇒ m [ctx #f])
   (define m-
-    (local-expand stx 'module-begin '() ctx))
+    (local-expand m 'module-begin '() ctx))
   (define sig
-    (syntax-local-introduce
-     (syntax-property m- 'sig:)))
+    (detach-sig m-))
   (list m- sig))
 
 ;; assume expected is already expanded
