@@ -4,12 +4,13 @@
          syntax/macro-testing
          (only-in hackett/private/base Integer)
          "../sig.rkt"
-         "../rep/sig.rkt"
+         "../rep/sig-literals.rkt"
          (for-syntax racket/base
                      rackunit
                      rackunit/text-ui
                      syntax/parse
                      "../check/sig-matches.rkt"
+                     "../rep/sig.rkt"
                      ))
 
 (define-signature S

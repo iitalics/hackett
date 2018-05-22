@@ -8,7 +8,8 @@
  syntax/parse
  hackett/private/util/stx
  "sig-matches.rkt"
- (for-template "../rep/sig.rkt"))
+ (for-template "../rep/sig-literals.rkt")
+ "../rep/sig.rkt")
 
 (define (attach-sig stx s)
   (syntax-property stx 'sig: s))
@@ -31,4 +32,3 @@
               (sig->string expected) (sig->string #'actual))
       stx))
   #'m-)
-

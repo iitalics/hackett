@@ -1,7 +1,7 @@
 #lang racket/base
 (require
+ "rep/sig-literals.rkt"
  "mod.rkt"
- "rep/sig.rkt"
  "dot.rkt"
  racket/pretty
  syntax/parse/define
@@ -13,6 +13,7 @@
              racket/list
              syntax/parse
              hackett/private/util/stx
+             "rep/sig.rkt"
              "check/expand-check.rkt"
              "check/module-var.rkt"))
 

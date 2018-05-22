@@ -1,6 +1,6 @@
 #lang racket/base
 (require
- "rep/sig.rkt"
+ "rep/sig-literals.rkt"
  racket/pretty
  syntax/parse/define
  hackett/private/type-language
@@ -10,6 +10,7 @@
              syntax/parse
              syntax/kerncase
              syntax/id-set
+             "rep/sig.rkt"
              "check/expand-check.rkt"))
 
 (provide

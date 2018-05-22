@@ -3,7 +3,8 @@
 (provide signature-matches?
          sig-matches?)
 
-(require (for-template "../rep/sig.rkt")
+(require (for-template "../rep/sig-literals.rkt")
+         "../rep/sig.rkt"
          racket/syntax
          syntax/parse
          (only-in syntax/parse [attribute @])
@@ -134,4 +135,3 @@
    #'(values (make-rename-transformer #'B) ...)
    ctx)
   ctx)
-

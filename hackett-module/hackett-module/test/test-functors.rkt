@@ -52,11 +52,9 @@
 ;; If it doesn't say `#%dot` here and says
 ;; `(#%type:con opaque:M.U34)` or something it's wrong!
 
-#;
 (def-module ReorderTypes*
   (seal ReorderTypes
         :>
         (Π ([M : TYPES])
           (sig (type T = M.U)
                (type U = M.T)))))
-
