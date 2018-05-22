@@ -12,12 +12,12 @@
              racket/list
              syntax/parse
              hackett/private/util/stx
-             "check/sig-matches.rkt"
              "check/expand-check.rkt"
              "check/module-var.rkt"))
 
 (provide
  def-module
+ seal
  λₑ
  λₘ
  appₘ)
@@ -38,6 +38,12 @@
        (define-syntaxes [id ...] (values transformer ...))
        (printf "module body: ")
        (pretty-write name))])
+
+(define-syntax-parser seal
+  #:datum-literals [:>]
+  [(_ m:expr :> s:sig)
+   #:with m- (sig⇐ #'m #'s.expansion)
+   (attach-sig #'m- #'s.expansion)])
 
 (define-syntax λₑ (make-rename-transformer #'hkt:λ))
 
@@ -94,13 +100,8 @@
    ;; TODO: allow module paths for `a`, or module expressions if possible
 
    #:with [f- (#%pi-sig ([x A]) B)] (sig⇒ #'f)
-   #:with [a- A*] (sig⇒ #'a)
+   #:with a- (sig⇐ #'a #'A)
 
-   #:do [(unless (signature-matches? #'A* #'A)
-           (raise-syntax-error #f
-             (format "signature mismatch\n  expected: ~a\n  given:    ~a"
-                     (sig->string #'A) (sig->string #'A*))
-             #'a))]
    #:with B* (signature-substs #'B #'([x a]))
    (attach-sig #'(#%app f- a-)
                #'B*)])
