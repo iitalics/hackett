@@ -13,7 +13,8 @@
              syntax/parse
              hackett/private/util/stx
              "check/sig-matches.rkt"
-             "check/expand-check.rkt"))
+             "check/expand-check.rkt"
+             "check/module-var.rkt"))
 
 (provide
  def-module
