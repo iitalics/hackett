@@ -13,7 +13,7 @@
                      "../rep/sig.rkt"
                      ))
 
-(define-signature S
+(def-signature S
   (sig
    (type X)
    (val x :   X)
