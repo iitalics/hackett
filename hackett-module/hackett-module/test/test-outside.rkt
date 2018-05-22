@@ -1,5 +1,8 @@
 #lang hackett-module/outside
 
+(type X String)
+(def u : X "hello")
+
 (def-module M
   (mod
    (type X Integer)
@@ -11,12 +14,3 @@
    (foo 3)
 
    ))
-
-(def-module M* M)
-
-(type Y M.X)
-(def y : Y 8)
-
-#;
-(def-module F
-  (λₘ ([m : (sig (type X))]) m))
