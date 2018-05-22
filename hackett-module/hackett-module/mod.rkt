@@ -161,7 +161,7 @@
 (define-syntax-parser mod
   [(_ defn ...)
    ;; put the defns in a new scope
-   #:with [defn* ...] ((make-syntax-introducer) #'[defn ...])
+   #:with [defn* ...] ((make-syntax-introducer #true) #'[defn ...])
    #:with modbeg- (local-expand #'(hkt:#%module-begin
                                    (mod/acc
                                     []
