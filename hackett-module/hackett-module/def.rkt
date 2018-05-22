@@ -12,6 +12,7 @@
              racket/syntax
              racket/list
              syntax/parse
+             syntax/intdef
              hackett/private/util/stx
              "rep/sig.rkt"
              "check/expand-check.rkt"
@@ -96,7 +97,9 @@
    #:with x-- (intro #'x-)
    #:with [body- B] (sig⇒ #'body ctx)
    #:with B* (reintroduce-#%dot (intro #'x) #'x-- #'B ctx)
-   (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B*))])
+   (internal-definition-context-track
+    ctx
+    (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B*)))])
 
 (define-syntax-parser appₘ
   #:literals [#%pi-sig]
