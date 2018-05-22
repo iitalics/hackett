@@ -7,11 +7,15 @@
 
 (require
  racket/match
+ racket/syntax
  syntax/parse
+ (only-in syntax/parse [attribute @])
  syntax/parse/class/local-value
  hackett/private/util/stx
  "expand-check.rkt"
- (for-template "../rep/sig.rkt"))
+ "../util/stx.rkt"
+ (for-template "../rep/sig.rkt")
+ (for-template hackett/private/type-language))
 
 ;; internal-id : Id
 ;; signature : Signature
@@ -47,7 +51,9 @@
          sym)]))
 
   (define opaque-type-ids
-    (generate-temporaries opaque-type-syms))
+    (generate-temporaries
+     (for/list ([s (in-list opaque-type-syms)])
+       (format-symbol "opaque:~a.~a" (syntax-e name) s))))
 
   (define opaque-type-bindings
     (for/list ([sym (in-list opaque-type-syms)]
@@ -71,13 +77,54 @@
   (cons module-binding opaque-type-bindings))
 
 
+;; Sig [Hash Symbol Id] -> IntDefCtx
+;; note: the sig argument must be a sig (e.g. not a Π-sig)
+(define (module-make-type-expansion-context sig sym->id)
+  (syntax-parse sig
+    #:literal-sets [sig-literals]
+    [(#%sig internal-ids:hash-literal
+            decls:hash-literal)
+     (define intdef-ctx
+       (syntax-local-make-definition-context))
+
+     ;; create type transformers for #%type-decl:
+     ;;  - #%alias maps to the rhs
+     ;;  - #%opaque maps to (#%type:con <opaque-id>)
+
+     (for ([(sym decl) (in-hash (@ decls.value))])
+       (define internal-id (hash-ref (@ internal-ids.value) sym))
+       (syntax-parse decl
+         #:literal-sets [sig-literals]
+
+         [(#%type-decl (#%alias rhs))
+          (syntax-local-bind-syntaxes
+           (list internal-id)
+           #'(make-variable-like-transformer
+              (quote-syntax rhs))
+           intdef-ctx)]
+
+         [(#%type-decl (#%opaque))
+          #:with type-con-id (hash-ref sym->id sym)
+          (syntax-local-bind-syntaxes
+           (list internal-id)
+           #'(make-variable-like-transformer
+              (quote-syntax (#%type:con type-con-id)))
+           intdef-ctx)]
+
+         [_ (void)]))
+
+     intdef-ctx]))
+
+
 (define-syntax-class module-binding
   #:description "module name"
-  #:attributes [value internal-id sig opaque-ids]
+  #:attributes [value internal-id sig opaque-ids expansion-ctx]
   [pattern {~var m (local-value module-var-transformer?)}
-           #:attr value (attribute m.local-value)
+           #:attr value (@ m.local-value)
            #:do [(match-define (module-var-transformer x- s sym->id)
-                   (attribute value))]
+                   (@ value))]
            #:with internal-id (syntax-local-introduce x-)
            #:attr sig (syntax-local-introduce s)
-           #:attr opaque-ids sym->id])
+           #:attr opaque-ids sym->id
+           #:attr expansion-ctx
+           (module-make-type-expansion-context (@ sig) (@ opaque-ids))])

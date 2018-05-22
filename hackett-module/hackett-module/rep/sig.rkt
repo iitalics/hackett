@@ -16,6 +16,7 @@
                      sig-internal-ids
                      sig-decls
                      decl-type-opaque?
+                     decl-val?
                      ))
 
 (require syntax/parse/define
@@ -68,7 +69,7 @@
     (for/fold ([acc #'(values)])
               ([orig (in-list (syntax->list origs))])
       (syntax-track-origin acc orig id)))
-  
+
   ;; ---------------------------------------------
 
 
@@ -106,7 +107,7 @@
 
   (define (sig->string S)
     (format "~v" (syntax->datum S)))
-  
+
   ;; ---------------------------------------------
 
 
@@ -209,6 +210,13 @@
     (syntax-parse d
       #:literal-sets [sig-literals]
       [(#%type-decl (#%opaque)) #t]
+      [_ #f]))
+
+  ;; Decl -> Bool
+  (define (decl-val? d)
+    (syntax-parse d
+      #:literal-sets [sig-literals]
+      [(#%val-decl _) #t]
       [_ #f]))
 
   )
