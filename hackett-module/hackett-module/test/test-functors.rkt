@@ -18,7 +18,7 @@
 (def-module Reorder
   (λₘ ([N : NUMBERS])
     (mod
-      (def x (: "im not an int" String)) ; referring to the earlier x?? but it shouldn't be in scope here!!
+      (def x (: "im not an int" String))
       (def y N.x)
       (def z N.z))))
 
