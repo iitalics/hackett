@@ -18,18 +18,21 @@
 ;;  - PiSig
 
 ;; Signature Signature -> Boolean
+;; the signatures should be already expanded.
 (define (signature-matches? A B)
   ;; TODO: call either sig-matches or pi-sig-matches depending
-  (sig-matches? A B))
+  (syntax-parse (list A B)
+    #:literal-sets [sig-literals]
+    [[(#%sig . _) (#%sig . _)]
+     (sig-matches? A B)]
+    [[_ _]
+     #f]))
 
 ;; Sig Sig -> Boolean
-(define (sig-matches? A* B*)
-  (define/syntax-parse A:sig A*)
-  (define/syntax-parse B:sig B*)
-  (define/syntax-parse (_ A-internal-ids:hash-lit A-decls:hash-lit)
-    #'A.expansion)
-  (define/syntax-parse (_ B-internal-ids:hash-lit B-decls:hash-lit)
-    #'B.expansion)
+;; the signatures should be already expanded.
+(define (sig-matches? A B)
+  (define/syntax-parse (_ A-internal-ids:hash-lit A-decls:hash-lit) A)
+  (define/syntax-parse (_ B-internal-ids:hash-lit B-decls:hash-lit) B)
 
   ;; A Common is an Identifier to be bound in the extended common
   ;; environment that will be used for checking the components against
