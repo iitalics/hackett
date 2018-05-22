@@ -72,10 +72,7 @@
 (begin-for-syntax
   ;; the ctx contains a module-binding for m-dots-are-from-id
   ;; ASSUME s-to-reintro is already expanded
-  (define (reintroduce-#%dot m-dots-are-from-id s-to-reintro ctx)
-    (define m-internal-id
-      (module-var-transformer-internal-id
-       (syntax-local-value m-dots-are-from-id #f ctx)))
+  (define (reintroduce-#%dot m-dots-are-from-id m-to-prefix-id s-to-reintro ctx)
 
     ;; determine which opaque cons to substitute by comparing
     ;; their mod internal id's with the prefix, to see if we should
@@ -90,7 +87,8 @@
            [(opaque-type-constructor mod-id external-sym)
             #:when (free-identifier=? mod-id m-dots-are-from-id)
             ;; and if it is, actually do the reintroducing
-            #`(#%dot_τ #,m-internal-id #,external-sym)]
+            (quasisyntax/loc stx
+              (#%dot_τ #,m-to-prefix-id #,external-sym))]
            [_
             stx])]
         [_
