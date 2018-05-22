@@ -7,7 +7,7 @@
 (require
  syntax/parse/define
  hackett/private/type-language
- "rep/sig.rkt"
+ "rep/sig-literals.rkt"
  (for-syntax racket/base
              racket/match
              racket/syntax
@@ -16,6 +16,7 @@
              hackett/private/typecheck
              hackett/private/util/stx
              "check/module-var.rkt"
+             "rep/sig.rkt"
              "util/stx-traverse.rkt"
              (for-syntax racket/base
                          racket/syntax
@@ -90,4 +91,3 @@
          (traverse-stx/recur stx traverse)]))
 
     (traverse s-to-reintro)))
-       

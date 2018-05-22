@@ -14,7 +14,8 @@
  hackett/private/util/stx
  "expand-check.rkt"
  "../util/stx.rkt"
- (for-template "../rep/sig.rkt")
+ "../rep/sig.rkt"
+ (for-template "../rep/sig-literals.rkt")
  (for-template hackett/private/type-language))
 
 ;; internal-id : Id

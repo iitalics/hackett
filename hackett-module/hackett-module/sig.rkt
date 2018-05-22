@@ -7,12 +7,13 @@
          def-signature)
 
 (require syntax/parse/define
-         "rep/sig.rkt"
+         "rep/sig-literals.rkt"
          hackett/private/type-language
          (only-in hackett/base type)
          (for-syntax racket/base
                      syntax/parse
                      hackett/private/util/stx
+                     "rep/sig.rkt"
                      ))
 
 (define-syntax val #f)
