@@ -57,4 +57,4 @@
         :>
         (Π ([M : TYPES])
           (sig (type T = M.U)
-               (type U = M.T))))
+               (type U = M.T)))))
