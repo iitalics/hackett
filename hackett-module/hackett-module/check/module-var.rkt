@@ -60,7 +60,7 @@
                [id (in-list opaque-type-ids)])
       (list id
             #`(opaque-type-constructor
-               (quote-syntax #,internal-id)
+               (quote-syntax #,name)
                '#,sym))))
 
   (define/syntax-parse [sym ...] opaque-type-syms)

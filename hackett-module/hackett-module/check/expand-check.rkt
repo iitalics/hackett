@@ -15,7 +15,8 @@
   (define m-
     (local-expand m 'module-begin '() ctx))
   (define sig
-    (detach-sig m-))
+    (syntax-local-introduce
+     (detach-sig m-)))
   (list m- sig))
 
 ;; assume expected is already expanded
