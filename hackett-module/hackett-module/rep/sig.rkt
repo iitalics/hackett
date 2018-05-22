@@ -15,6 +15,7 @@
                      sig-literals
                      sig-internal-ids
                      sig-decls
+                     decl-type?
                      decl-type-opaque?
                      decl-val?
                      ))
@@ -204,6 +205,12 @@
       #:literal-sets [sig-literals]
       [(sig:#%sig _ decls:hash-literal)
        (attribute decls.value)]))
+
+  ;; Decl -> Bool
+  (define (decl-type? d)
+    (syntax-parse d
+      [(#%type-decl _) #t]
+      [_ #f]))
 
   ;; Decl -> Bool
   (define (decl-type-opaque? d)
