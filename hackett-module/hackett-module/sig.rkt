@@ -1,6 +1,7 @@
 #lang racket/base
 
 (provide sig
+         Π
          val
          type
          def-signature)
@@ -36,6 +37,11 @@
       #,(for/hash ([id (in-list (attribute entry.id))]
                    [norm (in-list (attribute entry.norm))])
           (values (syntax-e id) norm)))])
+
+(define-syntax-parser Π
+  #:datum-literals [:]
+  [(_ ([x : A:expr]) B:expr)
+   #'(#%pi-sig ([x A]) B)])
 
 (define-simple-macro
   (def-signature name sig-expr:sig)
