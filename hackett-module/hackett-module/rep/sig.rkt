@@ -119,7 +119,7 @@
 
            #:with x-- (intro #'x-)
            #:with {~var B* (sig ctx)} #'B
-           #:with B** (reintroduce-#%dot #'x-- #'B*.expansion ctx)
+           #:with B** (reintroduce-#%dot (intro #'x) #'B*.expansion ctx)
 
            #:attr expansion (~>> (syntax/loc/props this-syntax
                                                    (head ([x-- A.expansion])
