@@ -11,22 +11,29 @@
 
 (def-module Empty (mod))
 (def-module Numbers
-  (mod (def x 3) (def y x) (def z {x + 1})))
+  (mod (def x 3)
+       (def y x)
+       (def z {x + 1})))
 
 (def-module Reorder
   (λₘ ([N : NUMBERS])
     (mod
-      (def x N.y)
+      (def x (: "im not an int" String))
       (def y N.x)
       (def z N.z))))
 
+(def-module Numbers+
+  (appₘ Reorder Numbers))
+
 ;; ======================
 
+#;
 (def-signature TYPES
   (sig
     (type T)
     (type U)))
 
+#;
 (def-module ReorderTypes
   (λₘ ([M : TYPES])
     (mod
