@@ -13,10 +13,9 @@
              racket/syntax
              syntax/parse
              (only-in syntax/parse [attribute @])
-             hackett/private/typecheck
+             (only-in hackett/private/typecheck attach-type)
              hackett/private/util/stx
              "check/module-var.rkt"
-             "rep/sig.rkt"
              "util/stx-traverse.rkt"
              (for-syntax racket/base
                          racket/syntax
