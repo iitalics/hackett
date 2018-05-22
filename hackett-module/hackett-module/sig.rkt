@@ -3,7 +3,7 @@
 (provide sig
          val
          type
-         define-signature)
+         def-signature)
 
 (require syntax/parse/define
          "rep/sig.rkt"
@@ -38,7 +38,7 @@
           (values (syntax-e id) norm)))])
 
 (define-simple-macro
-  (define-signature name sig-expr:sig)
+  (def-signature name sig-expr:sig)
   (begin
     (define-values [] sig-expr.residual)
     (define-syntax name
