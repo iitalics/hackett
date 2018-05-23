@@ -6,6 +6,7 @@
   '("base"
     "hackett-lib"
     "threading-lib"
+    "syntax-classes-lib"
     "rackunit-lib"
     ))
 
