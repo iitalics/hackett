@@ -4,14 +4,15 @@
          sig-matches?)
 
 (require (for-template "../rep/sig-literals.rkt")
+         "module-var.rkt"
          "../rep/sig.rkt"
+         "../util/stx.rkt"
          racket/syntax
          syntax/parse
          (only-in syntax/parse [attribute @])
          threading
          hackett/private/typecheck
-         "../util/stx.rkt"
-         "module-var.rkt"
+         hackett/private/util/stx
          )
 
 ;; A Signature is one of:
@@ -79,62 +80,69 @@
   ;; each other
 
   ;; sym->common : [Hashof Sym Common]
-  ;; common-intdef-ctx : InternalDefinitionContext
-  (define-values [sym->common common-intdef-ctx]
+  (define sym->common
     (let*
-        ([ctx (syntax-local-make-definition-context)]
-         [generate-bound-temporary
-          (λ (x)
-            (define y (generate-temporary x))
-            (syntax-local-bind-syntaxes (list y) #f ctx)
-            (internal-definition-context-introduce ctx y))]
-         [acc (hash)]
+        ([acc (hash)]
          [acc
           (for/fold ([acc acc])
                     ([k (in-hash-keys (@ A-internal-ids.value))]
                      #:when (not (hash-has-key? acc k)))
-            (hash-set acc k (generate-bound-temporary k)))]
+            (hash-set acc k (generate-temporary k)))]
          [acc
           (for/fold ([acc acc])
                     ([k (in-hash-keys (@ B-internal-ids.value))]
                      #:when (not (hash-has-key? acc k)))
-            (hash-set acc k (generate-bound-temporary k)))])
-      (values acc ctx)))
-
-  ;; create an internal definition context mapping A ids to Common ids
-  (define A->common
-    (make-rename-context
-     common-intdef-ctx
-     (for/list ([(sym A-id) (in-hash (@ A-internal-ids.value))])
-       (list A-id (hash-ref sym->common sym)))))
-
-  ;; create an internal definition context mapping A ids to Common ids
-  (define B->common
-    (make-rename-context
-     common-intdef-ctx
-     (for/list ([(sym B-id) (in-hash (@ B-internal-ids.value))])
-       (list B-id (hash-ref sym->common sym)))))
-
-  ;; IntDefCtx [Hashof Sym Stx] -> [Hashof Sym Stx]
-  (define (rename-decl-hash rnm-ctx decl-hash)
-    (for/hash ([(k v) (in-hash decl-hash)])
-      (values k (expand-decl v rnm-ctx))))
-
-  (define A-decls* (rename-decl-hash A->common (@ A-decls.value)))
-  (define B-decls* (rename-decl-hash B->common (@ B-decls.value)))
+            (hash-set acc k (generate-temporary k)))])
+      acc))
 
   ;; TODO: make an environment that maps the Common ids to
-  ;;       their components from A.
+  ;;       transformers that act like their components from A.
+
+  (define common-ctx
+    (syntax-local-make-definition-context))
+  (define (intro stx)
+    (internal-definition-context-introduce common-ctx stx))
+
+  (define A*
+    (intro
+     (signature-substs
+      A
+      (for/free-id-table ([(sym id) (in-hash (@ A-internal-ids.value))])
+        (values id (hash-ref sym->common sym))))))
+
+  (define B*
+    (intro
+     (signature-substs
+      B
+      (for/free-id-table ([(sym id) (in-hash (@ B-internal-ids.value))])
+        (values id (hash-ref sym->common sym))))))
+
+  (for ([(sym decl) (in-hash (sig-decls A*))])
+    (syntax-local-bind-syntaxes
+     (list (hash-ref sym->common sym))
+     (decl->transformer-stx decl)
+     common-ctx))
 
   ;; check that all components in B correspond with
   ;; components in A
-  (for/and ([(sym B-comp) (in-hash B-decls*)])
-    (define A-comp (hash-ref A-decls* sym #f))
-    (and
-     A-comp
-     (sig-entry-matches?
-      A-comp
-      B-comp))))
+  (for/and ([(sym B-decl) (in-hash (sig-decls B*))])
+    (define A-decl (hash-ref (sig-decls A*) sym #f))
+    (and A-decl
+         (let ()
+           (define A-decl* (expand-decl A-decl common-ctx))
+           (define B-decl* (expand-decl B-decl common-ctx))
+           (sig-entry-matches?
+            A-decl*
+            B-decl*)))))
+
+;; Id Decl -> TransformerStx or #f
+(define (decl->transformer-stx decl)
+  (syntax-parse decl
+    #:literal-sets [sig-literals]
+    [(#%val-decl _) #f]
+    [(#%type-decl (#%opaque)) #f]
+    [(#%type-decl (#%alias t))
+     #'(make-variable-like-transformer (quote-syntax t))]))
 
 ;; Decl Decl -> Bool
 (define (sig-entry-matches? A B)
