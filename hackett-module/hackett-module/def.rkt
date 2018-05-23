@@ -46,7 +46,9 @@
   #:datum-literals [:>]
   [(_ m:expr :> s:sig)
    #:with m- (sig⇐ #'m #'s.expansion)
-   (attach-sig #'m- #'s.expansion)])
+   (attach-sig #'(let-values ([() s.residual])
+                   m-)
+               #'s.expansion)])
 
 (define-syntax λₑ (make-rename-transformer #'hkt:λ))
 
