@@ -97,12 +97,16 @@
 
 (define-syntax-parser appₘ
   #:literals [#%pi-sig]
-  [(_ f:expr a:id)
+  [(_ fun:expr arg:id)
    ;; TODO: allow module paths for `a`, or module expressions if possible
 
-   #:with [f- (#%pi-sig ([x A]) B)] (sig⇒ #'f)
-   #:with a- (sig⇐ #'a #'A)
+   #:with [fun- (#%pi-sig ([x A]) B)] (sig⇒ #'fun)
+   #:with arg- (sig⇐ #'arg #'A)
 
-   #:with B* (signature-substs #'B #'([x a]))
-   (attach-sig #'(#%app f- a-)
-               #'B*)])
+   ;; create a context where x is bound to module with sig A
+   ;; for substituting the argument into the body
+   #:do [(define ctx (syntax-local-make-definition-context))
+         (syntax-local-bind-module #'x #'arg- #'A ctx)]
+
+   #:with {~var B* (sig ctx)} #'B
+   (attach-sig #'(#%app fun- arg-) #'B*.expansion)])
