@@ -7,6 +7,7 @@
  module-binding)
 
 (require
+ racket/list
  racket/match
  racket/syntax
  syntax/parse
@@ -86,7 +87,7 @@
   (syntax-local-bind-syntaxes
    (map first bindings)
    #`(values #,@(map second bindings))
-   ctx))
+   intdef-ctx))
 
 ;; Sig [Hash Symbol Id] -> IntDefCtx
 ;; note: the sig argument must be a sig (e.g. not a Π-sig)

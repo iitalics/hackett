@@ -107,7 +107,7 @@
                    (internal-definition-context-introduce ctx stx))
 
                  (syntax-local-bind-syntaxes (list #'x-) #f ctx)
-                 (syntax-local-bind-module #'x #'x- #'A.expansion)]
+                 (syntax-local-bind-module #'x #'x- #'A.expansion ctx)]
 
            #:with x-- (intro #'x-)
            #:with {~var B* (sig ctx)} #'B
