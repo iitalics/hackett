@@ -3,8 +3,7 @@
 (provide sig
          decl
          expand-sig
-         expand-decl
-         signature-substs)
+         expand-decl)
 
 (require racket/syntax
          racket/list
@@ -50,16 +49,6 @@
   (syntax-parse stx
     [{~var D (decl intdef-ctx)}
      #'D.expansion]))
-
-(define (signature-substs S xs/vs)
-  (define/syntax-parse ([x v] ...) xs/vs)
-  ;; create a context where each `x` is bound to its `v`
-  (define ctx (syntax-local-make-definition-context))
-  (syntax-local-bind-syntaxes
-   (attribute x)
-   #'(values (make-variable-like-transformer (quote-syntax v)) ...)
-   ctx)
-  (expand-sig S ctx))
 
 ;; ---------------------------------------------
 
