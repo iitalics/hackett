@@ -31,7 +31,8 @@
       #:with norm #'(#%type-decl (#%alias alias-type))]))
 
 (define-syntax-parser sig
-  [(_ entry:sig-entry ...)
+  [(_ ent ...)
+   #:with [entry:sig-entry ...] ((make-syntax-introducer #t) #'[ent ...])
    #`(#%sig
       #,(for/hash ([id (in-list (attribute entry.id))])
           (values (syntax-e id) id))
