@@ -5,6 +5,7 @@
          expand-sig
          expand-decl
          signature-subst
+         signature-substs
          sig-where)
 
 (require racket/syntax
@@ -12,6 +13,7 @@
          syntax/parse
          syntax/parse/define
          syntax/intdef
+         syntax/id-table
          threading
          hackett/private/util/stx
          hackett/private/typecheck
@@ -53,15 +55,22 @@
     [{~var D (decl intdef-ctx)}
      #'D.expansion]))
 
-;; Signature Id Id -> Signature
-(define (signature-subst s x-from path-to)
+;; Signature [FreeIdTbl Id] -> Signature
+(define (signature-substs s mapping)
   (expand-sig
    (let traverse ([stx s])
      (syntax-parse stx
        [:id
-        (if (free-identifier=? stx x-from) path-to stx)]
+        (free-id-table-ref mapping stx stx)]
        [_
         (traverse-stx/recur stx traverse)]))))
+
+;; Signature Id Id -> Signature
+(define (signature-subst s x-old x-new)
+  (define mapping
+    (make-immutable-free-id-table
+     (list (cons x-old x-new))))
+  (signature-substs s mapping))
 
 ;; ---------------------------------------------
 
@@ -172,4 +181,3 @@
               (raise-syntax-error #f
                 "can't `where` a non-existent declaration"
                 base))))]))
-
