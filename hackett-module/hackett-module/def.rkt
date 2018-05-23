@@ -101,5 +101,5 @@
    ;; TODO: allow module paths for `a`, or module expressions if possible
    #:with [fun- (#%pi-sig ([x A]) B)] (sig⇒ #'fun)
    #:with arg- (sig⇐ #'arg #'A)
-   #:with B* (signature-subst #'B #'x #'arg)
-   (attach-sig #'(#%app fun- arg-) #'B*)])
+   #:with B*:sig (signature-subst #'B #'x #'arg)
+   (attach-sig #'(#%app fun- arg-) #'B*.expansion)])

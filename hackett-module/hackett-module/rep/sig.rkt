@@ -55,15 +55,15 @@
     [{~var D (decl intdef-ctx)}
      #'D.expansion]))
 
-;; Signature [FreeIdTbl Id] -> Signature
+;; Signature [FreeIdTbl Id] -> SignatureStx
+;; note: result is stx, aka. unexpanded
 (define (signature-substs s mapping)
-  (expand-sig
-   (let traverse ([stx s])
-     (syntax-parse stx
-       [:id
-        (free-id-table-ref mapping stx stx)]
-       [_
-        (traverse-stx/recur stx traverse)]))))
+  (let traverse ([stx s])
+    (syntax-parse stx
+      [:id
+       (free-id-table-ref mapping stx stx)]
+      [_
+       (traverse-stx/recur stx traverse)])))
 
 ;; Signature Id Id -> Signature
 (define (signature-subst s x-old x-new)
