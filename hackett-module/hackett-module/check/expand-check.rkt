@@ -9,6 +9,7 @@
  hackett/private/util/stx
  "expand-check-prop.rkt"
  "sig-matches.rkt"
+ "../rep/sig-pretty.rkt"
  (for-template "../rep/sig-literals.rkt"))
 
 (define (sig⇒ m [ctx #f])
@@ -22,10 +23,10 @@
 ;; assume expected is already expanded
 (define (sig⇐ stx expected [ctx #f])
   (define/syntax-parse [m- actual] (sig⇒ stx ctx))
-
   (unless (signature-matches? #'actual expected)
     (raise-syntax-error #f
       (format "signature mismatch\n  expected: ~a\n  given:    ~a"
-              (sig->string expected) (sig->string #'actual))
+              (sig->string expected 12)
+              (sig->string #'actual 12))
       stx))
   #'m-)

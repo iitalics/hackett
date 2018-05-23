@@ -15,6 +15,7 @@
              syntax/intdef
              hackett/private/util/stx
              "rep/sig.rkt"
+             "rep/sig-pretty.rkt"
              "check/expand-check.rkt"
              "check/module-var.rkt"))
 
@@ -28,15 +29,14 @@
 (define-syntax-parser def-module
   [(_ name:id m:expr)
    #:with [m- sig] (sig⇒ #'m)
-   #:with name- (generate-temporary #'name)
+   #:with sig-str (sig->string #'sig 10)
 
-   #:with [[id transformer] ...]
-   (generate-module-var-bindings #'name #'name- #'sig)
+   #:with name- (generate-temporary #'name)
+   #:with [[id transformer] ...] (generate-module-var-bindings #'name #'name- #'sig)
 
    #'(begin
        (printf "\n---------\nbinding: ~a\n" 'name)
-       (printf "inferred: ")
-       (pretty-write 'sig)
+       (printf "inferred: ~a\n" 'sig-str)
        (define name- m-)
        (define-syntaxes [id ...] (values transformer ...))
        (printf "module body: ")
