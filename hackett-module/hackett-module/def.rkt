@@ -79,20 +79,12 @@
    ;; #%pi-sig will have to apply these same steps during expansion.
 
    ;; create a context where x is bound
-   #:do [(define bindings
-           (generate-module-var-bindings
-            #'x
-            #'x-
-            #'A.expansion))
-         (define ctx (syntax-local-make-definition-context))
+   #:do [(define ctx (syntax-local-make-definition-context))
          (define (intro stx)
            (internal-definition-context-introduce ctx stx))
 
          (syntax-local-bind-syntaxes (list #'x-) #f ctx)
-         (syntax-local-bind-syntaxes
-          (map first bindings)
-          #`(values #,@(map second bindings))
-          ctx)]
+         (syntax-local-bind-module #'x #'x- #'A.expansion ctx)]
 
    #:with x-- (intro #'x-)
    #:with [body- B] (sig⇒ #'body ctx)

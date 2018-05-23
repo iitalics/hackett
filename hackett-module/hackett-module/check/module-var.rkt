@@ -3,6 +3,7 @@
  (struct-out module-var-transformer)
  (struct-out opaque-type-constructor)
  generate-module-var-bindings
+ syntax-local-bind-module
  module-binding)
 
 (require
@@ -76,6 +77,16 @@
 
   (cons module-binding opaque-type-bindings))
 
+;; Id Id Signature IntDefCtx -> Void
+;; signature must be expanded. ASSUME: internal-id should be
+;; already bound in the intdef-ctx.
+(define (syntax-local-bind-module name internal-id signature intdef-ctx)
+  (define bindings
+    (generate-module-var-bindings name internal-id signature))
+  (syntax-local-bind-syntaxes
+   (map first bindings)
+   #`(values #,@(map second bindings))
+   ctx))
 
 ;; Sig [Hash Symbol Id] -> IntDefCtx
 ;; note: the sig argument must be a sig (e.g. not a Π-sig)
