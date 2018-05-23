@@ -5,13 +5,15 @@
 
 (require
  racket/pretty
+ racket/syntax
  syntax/parse
  syntax/id-table
  (only-in syntax/parse [attribute @])
  (only-in hackett/private/typecheck type->string type-literals)
  "../util/stx.rkt"
  "../util/stx-traverse.rkt"
- (for-template "sig-literals.rkt"))
+ (for-template "sig-literals.rkt"
+               (only-in "../dot.rkt" #%dot_τ)))
 
 ;; Sig -> String
 ;; Sig Int -> String
@@ -65,16 +67,21 @@
 
 ;; [FreeIdTbl Id Sym] Stx -> Stx
 (define (subst-ids mapping stx)
-  (let trav ([stx stx])
+  (let traverse ([stx stx])
     (cond
       [(identifier? stx)
        (free-id-table-ref mapping stx stx)]
       [else
-       (traverse-stx/recur stx trav)])))
+       (traverse-stx/recur stx traverse)])))
 
 ;; like Hackett's type->string, but handles module-specific forms (like #%dot)
 (define (type->string/sig t)
-  ;; TODO: how do we do this? won't (require "dot.rkt") induce a cyclic dependency?
-  (with-handlers ([exn? (λ (e)
-                          (format "~a" (syntax->datum t)))])
-    (type->string t)))
+  (type->string
+   (let traverse ([t t])
+     (syntax-parse t
+       #:literals [#%dot_τ]
+       [(#%dot_τ m:expr x:id)
+        (format-id #f "~a.~a"
+                   (syntax->datum (traverse #'m))
+                   #'x)]
+       [_ (traverse-stx/recur t traverse)]))))
