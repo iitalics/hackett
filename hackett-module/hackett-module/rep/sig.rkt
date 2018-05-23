@@ -3,7 +3,8 @@
 (provide sig
          decl
          expand-sig
-         expand-decl)
+         expand-decl
+         signature-subst)
 
 (require racket/syntax
          racket/list
@@ -14,6 +15,7 @@
          hackett/private/util/stx
          hackett/private/typecheck
          "../util/stx.rkt"
+         "../util/stx-traverse.rkt"
          "../check/module-var.rkt"
          (for-syntax racket/base)
          (for-template racket/base
@@ -49,6 +51,16 @@
   (syntax-parse stx
     [{~var D (decl intdef-ctx)}
      #'D.expansion]))
+
+;; Signature Id Id -> Signature
+(define (signature-subst s x-from path-to)
+  (expand-sig
+   (let traverse ([stx s])
+     (syntax-parse stx
+       [:id
+        (if (free-identifier=? stx x-from) path-to stx)]
+       [_
+        (traverse-stx/recur stx traverse)]))))
 
 ;; ---------------------------------------------
 

@@ -99,14 +99,7 @@
   #:literals [#%pi-sig]
   [(_ fun:expr arg:id)
    ;; TODO: allow module paths for `a`, or module expressions if possible
-
    #:with [fun- (#%pi-sig ([x A]) B)] (sig⇒ #'fun)
    #:with arg- (sig⇐ #'arg #'A)
-
-   ;; create a context where x is bound to module with sig A
-   ;; for substituting the argument into the body
-   #:do [(define ctx (syntax-local-make-definition-context))
-         (syntax-local-bind-module #'x #'arg- #'A ctx)]
-
-   #:with {~var B* (sig ctx)} #'B
-   (attach-sig #'(#%app fun- arg-) #'B*.expansion)])
+   #:with B* (signature-subst #'B #'x #'arg)
+   (attach-sig #'(#%app fun- arg-) #'B*)])
