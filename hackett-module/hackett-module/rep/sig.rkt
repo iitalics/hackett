@@ -4,7 +4,8 @@
          decl
          expand-sig
          expand-decl
-         signature-subst)
+         signature-subst
+         sig-where)
 
 (require racket/syntax
          racket/list
@@ -147,3 +148,28 @@
            #:attr expansion this-syntax
            #:attr residual (residual #'[expansion]
                                      #'type-decl)])
+
+;; ---------------------------------------------
+
+;; sig-where : Sig Symbol Type -> Sig
+(define (sig-where base sym type)
+  (syntax-parse base
+    #:literal-sets [sig-literals]
+    [(sig:#%sig internal-ids:hash-literal decls:hash-literal)
+     #`(sig
+        internal-ids
+        #,(hash-update (attribute decls.value)
+                       sym
+            (λ (prev-decl)
+              (syntax-parse prev-decl #:literal-sets [sig-literals]
+                [(type-decl:#%type-decl (#%opaque))
+                 #`(type-decl (#%alias #,type))]
+                [_
+                 (raise-syntax-error #f
+                   "can't `where` a non-opaque declaration"
+                   base)]))
+            (λ ()
+              (raise-syntax-error #f
+                "can't `where` a non-existent declaration"
+                base))))]))
+
