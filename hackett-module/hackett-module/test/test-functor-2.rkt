@@ -9,7 +9,6 @@
         :>
         A))
 
-;; the M18 in the error message come from this definition:
 (def-module F
   (λₘ ([M : A])
     (seal
@@ -21,4 +20,19 @@
      (sig (type X = M.X) (type Y) (val y : Y) (val f : (-> Y X))))))
 
 (def-module N (appₘ F M))
+
+;; -------------------------------------
+
+;; the M55 in the error message comes from this functor:
+(def-module G
+  (λₘ ([M : A])
+    (λₘ ([N : (sig (type X = M.X) (type Y) (val y : Y) (val f : (-> Y X)))])
+      (seal
+       (mod (type X M.X)
+            (def ffy : Integer (M.f (N.f N.y))))
+       :>
+       (sig (type X = M.X) (val ffy : Integer))))))
+
+
+(def-module O (appₘ (appₘ G M) N))
 
