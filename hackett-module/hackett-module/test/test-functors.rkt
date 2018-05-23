@@ -39,18 +39,13 @@
       (type U M.T))))
 ;; should be shown as:
 ;inferred:
-;(#%pi-sig
-; ((M33
-;   (#%sig
-;    #hash((T . T) (U . U))
-;    #hash((T . (#%type-decl (#%opaque))) (U . (#%type-decl (#%opaque)))))))
-; (#%sig
-;  #hash((T . T) (U . U))
-;  #hash((T . (#%type-decl (#%alias (#%dot M33 U))))
-;        (U . (#%type-decl (#%alias (#%dot M33 T)))))))
+; (Π ((M33 (sig (type U) (type T))))
+;   (sig (type U = M33.T) (type T = M33.U)))
 
-;; If it doesn't say `#%dot` here and says
-;; `(#%type:con opaque:M.U34)` or something it's wrong!
+;; If it doesn't say `M33.T` here and says
+;; `opaque:M.T34` or something it's wrong!
+
+;; ======================
 
 (def-module ReorderTypes*
   (seal ReorderTypes
