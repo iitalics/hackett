@@ -22,6 +22,7 @@
 (def-module N (appₘ F M))
 
 ;; -------------------------------------
+#|
 
 ;; the M55 in the error message comes from this functor:
 (def-module G
@@ -35,4 +36,20 @@
 
 
 (def-module O (appₘ (appₘ G M) N))
+|#
 
+; -------------------
+
+(def-module H
+  (λₘ ([A : (sig (type X))])
+    (λₘ ([B : (sig (type X = A.X))])
+      (mod))))
+
+(def-module H-M (appₘ H M))
+;; should infer:
+;;   (Π ([B- (sig (type X = opaque:M.X-))]) (sig))
+;;
+;; instead it incorrectly infers:
+;;   (Π ([B- (sig (type X = opaque:A55.X-))]) (sig))
+;;                                 ^
+;;                      comes from A in the defn. of H
