@@ -11,11 +11,15 @@
          threading
          hackett/private/typecheck
          "../util/stx.rkt"
+         "module-var.rkt"
          )
 
 ;; A Signature is one of:
 ;;  - Sig
 ;;  - PiSig
+
+;; ---------------------------------------------------------
+;; signature-matches?
 
 ;; Signature Signature -> Boolean
 ;; the signatures should be already expanded.
@@ -25,8 +29,44 @@
     #:literal-sets [sig-literals]
     [[(#%sig . _) (#%sig . _)]
      (sig-matches? A B)]
+    [[(#%pi-sig . _) (#%pi-sig . _)]
+     (pi-sig-matches? A B)]
     [[_ _]
      #f]))
+
+;; ---------------------------------------------------------
+;; pi-sig-matches?
+
+;; PiSig PiSig -> Boolean
+;; the signatures A and B should already be expanded
+(define (pi-sig-matches? A B)
+  (define/syntax-parse (_ ([A-x A-in]) A-out) A)
+  (define/syntax-parse (_ ([B-x B-in]) B-out) B)
+  (and
+   ;; the "in" is contravariant
+   (signature-matches? #'B-in #'A-in)
+   (let ()
+     (define/syntax-parse x- (generate-temporary #'B-x))
+
+     ;; Create a context where both `A-x` and `B-x` are bound
+     ;; to the same module with the signature `B-in`.
+     ;; It's `B-in` because it has the most specific entries
+     ;; that both signatures need to be compatible with.
+     (define ctx (syntax-local-make-definition-context))
+     (syntax-local-bind-syntaxes (list #'x-) #f ctx)
+     (syntax-local-bind-syntaxes
+      (list #'A-x)
+      #'(make-rename-transformer (quote-syntax B-x))
+      ctx)
+     (syntax-local-bind-module #'B-x #'x- #'B-in ctx)
+
+     (define A-out* (expand-sig #'A-out ctx))
+     (define B-out* (expand-sig #'B-out ctx))
+
+     (signature-matches? A-out* B-out*))))
+
+;; ---------------------------------------------------------
+;; sig-matches?
 
 ;; Sig Sig -> Boolean
 ;; the signatures should be already expanded.
