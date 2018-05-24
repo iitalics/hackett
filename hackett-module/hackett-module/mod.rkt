@@ -18,7 +18,7 @@
 
 (begin-for-syntax
   (define disappeared-binding 'disappeared-binding)
-   
+
   (define-literal-set mod-stop-literals
     #:literal-sets [kernel-literals]
     [hkt:: hkt:type])
@@ -109,39 +109,44 @@
   )
 
 ; The mod/acc form parses and expands definitions using the "trampolining #%module-begin" technique;
-; we insert `begin` expressions so that an outer `#%module-begin` will handle the introduction of
+; we insert `begin` expressions so that the outer Racket expander will handle the introduction of
 ; bindings.
 ;
-; When the outer module is fully expanded, `mod/acc` will leave behind ???
+; When mod/acc is done parsing the definitions, it will leave behind an expression that generates
+; a hash table for the module. This expression will have a `sig⇒` syntax property on it containing
+; the inferred signature.
 
 (begin-for-syntax
   (define mod/acc-sig-prop (gensym 'sig⇒))
-  (define mod/acc-vals-prop (gensym 'mod-vals))
 
   (define-syntax-class mod/acc-sig
-    #:attributes [sig [val-id 1]]
+    #:attributes [sig]
+    ;; base case, when the expression with sig⇒ is found
     [pattern stx
+             #:when (syntax-property #'stx mod/acc-sig-prop)
              #:attr sig (syntax-local-introduce
-                         (syntax-property #'stx mod/acc-sig-prop))
-             #:attr val-ids (syntax-local-introduce
-                             (syntax-property #'stx mod/acc-vals-prop))
-             #:when (attribute sig)
-             #:with [val-id ...] #'val-ids]))
+                         (syntax-property #'stx mod/acc-sig-prop))]
 
-; a module signature
+    ;; recursive case for an intermediate binding expression such as
+    ;; (let-values ([....]) ....), (letrec-values ([....]) ....),
+    ;; (letrec-syntaxes+values ([....]) ....), etc.
+    [pattern (stuff ... next)
+             #:with :mod/acc-sig #'next]))
+
 (define-syntax-parser mod/acc
   [(_ [sig-entry/rev ...] [val-id/rev ...])
    #:with [sig-entry ...] (reverse (attribute sig-entry/rev))
-   #:with val-ids (reverse (attribute val-id/rev))
+   #:with [val-id ...] (reverse (attribute val-id/rev))
    #:with s:sig #'(sig:sig sig-entry ...)
-   (syntax-property
-    (syntax-property #'(define-values [] s.residual)
-      mod/acc-sig-prop
-      (syntax-local-introduce
-       (attribute s.expansion)))
-    mod/acc-vals-prop
-    (syntax-local-introduce
-     #'val-ids))]
+
+   #:with [[sym/id ...] ...] #'[['val-id val-id] ...]
+   #:with final-expression #'(let-values ([() s.residual])
+                               (hash sym/id ... ...))
+
+   (syntax-property #'final-expression
+     mod/acc-sig-prop
+     (syntax-local-introduce
+      (attribute s.expansion)))]
 
   [(head [ent/rev ...] [v/rev ...] defn rest-defn ...)
    #:with defn- (local-expand #'defn 'module mod-stop-ids)
@@ -173,27 +178,13 @@
   [(_ defn ...)
    ;; put the defns in a new scope
    #:with [defn* ...] ((make-syntax-introducer #true) #'[defn ...])
-   #:with modbeg- (local-expand #'(hkt:#%module-begin
-                                   (mod/acc
-                                    []
-                                    []
-                                    defn* ...))
-                                'module-begin
-                                '())
-   #:with (mb-head:id
-           pre-defn- ...
-           m:mod/acc-sig
-           post-defn- ...) #'modbeg-
 
-   ;; TODO: produce identifiers to reference val definitions from the sig
-   #:with [[sig-val-sym/id ...] ...]
-   #'[['m.val-id m.val-id] ...]
+   ;; expand `mod/acc` in a (let () ....) to parse the definitions
+   #:with expansion:mod/acc-sig
+   (local-expand #'(let ()
+                     (mod/acc [] [] defn* ...))
+                 'module
+                 '())
 
-   (attach-sig
-    #'(let ()
-        pre-defn- ...
-        m
-        post-defn- ...
-        ;; TODO: fill in references to the definitions into the hash
-        (hash sig-val-sym/id ... ...))
-    (attribute m.sig))])
+   (attach-sig #'expansion
+               (attribute expansion.sig))])
