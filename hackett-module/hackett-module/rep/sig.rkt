@@ -88,6 +88,8 @@
   [pattern (head:#%sig
             internal-ids:hash-literal
             decls:hash-literal)
+
+           ;; create a context where all of the internal-ids are bound
            #:do [(define intdef-ctx* (syntax-local-make-definition-context intdef-ctx))
                  (define (intro stx)
                    (internal-definition-context-introduce intdef-ctx* stx))
@@ -113,21 +115,21 @@
            #:with x- (generate-temporary #'x)
 
            ;; create a context where x is bound
-           #:do [(define ctx (syntax-local-make-definition-context))
+           #:do [(define intdef-ctx* (syntax-local-make-definition-context intdef-ctx))
                  (define (intro stx)
-                   (internal-definition-context-introduce ctx stx))
+                   (internal-definition-context-introduce intdef-ctx* stx))
 
-                 (syntax-local-bind-syntaxes (list #'x-) #f ctx)
-                 (syntax-local-bind-module #'x #'x- #'A.expansion ctx)]
+                 (syntax-local-bind-syntaxes (list #'x-) #f intdef-ctx*)
+                 (syntax-local-bind-module #'x #'x- #'A.expansion intdef-ctx*)]
 
            #:with x-- (intro #'x-)
-           #:with {~var B* (sig ctx)} #'B
-           #:with B** (reintroduce-#%dot (intro #'x) #'x-- #'B*.expansion ctx)
+           #:with {~var B* (sig intdef-ctx*)} #'B
+           #:with B** (reintroduce-#%dot (intro #'x) #'x-- #'B*.expansion intdef-ctx*)
 
            #:attr expansion (~>> (syntax/loc/props this-syntax
                                                    (head ([x-- A.expansion])
                                                          B**))
-                                 (internal-definition-context-track ctx))
+                                 (internal-definition-context-track intdef-ctx*))
            #:attr residual (residual #'[A.residual B*.residual expansion]
                                      #'head)])
 
