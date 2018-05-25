@@ -21,8 +21,8 @@
   (define f
     (λ (x)
       (case x
-        [[(#%dot M T) 1]]
-        [[(#%dot M F) 0]])))
+        [(#%dot M T) 1]
+        [(#%dot M F) 0])))
   (hash 'f f))
 
 
