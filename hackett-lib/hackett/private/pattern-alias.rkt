@@ -5,6 +5,7 @@
 (require syntax/parse/define
          (only-in hackett/private/adt defn)
          (only-in hackett/private/prim/type Nil ::)
+         (only-in hackett/private/kernel #%app)
          (for-syntax racket/base
                      racket/syntax
                      syntax/parse
