@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide pattern list)
+(provide pattern List)
 
 (require syntax/parse/define
          (only-in hackett/private/adt defn)
@@ -29,9 +29,9 @@
        (syntax-parser #:disable-colon-notation
          [({~var head} {~var arg} ...) #'old])))))
 
-(define-syntax list
+(define-syntax List
   (let ([trans
          (syntax-parser
-           [(list)          #'Nil]
-           [(list a bs ...) #'(:: a (list bs ...))])])
+           [(List)          #'Nil]
+           [(List a bs ...) #'(:: a (List bs ...))])])
     (proc+case-pat-exp trans trans)))

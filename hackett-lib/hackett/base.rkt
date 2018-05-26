@@ -2,7 +2,7 @@
 
 (require (only-in hackett/private/adt case* case λ λ* lambda lambda* defn _)
          (only-in hackett/private/type-alias type)
-         (only-in hackett/private/pattern-alias pattern list)
+         (only-in hackett/private/pattern-alias pattern List)
          (only-in hackett/private/class instance derive-instance)
          (except-in hackett/private/kernel λ lambda)
          hackett/private/provide
