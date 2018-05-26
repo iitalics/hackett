@@ -1,9 +1,15 @@
 #lang racket/base
 
-(provide prop:case-pattern-expander
-         case-pattern-expander?
-         case-pattern-expander
-         case-pattern-expander-transformer)
+(require racket/contract/base)
+(provide (contract-out
+          [prop:case-pattern-expander
+           (struct-type-property/c (-> any/c (-> syntax? syntax?)))]
+          [case-pattern-expander?
+           (-> any/c boolean?)]
+          [case-pattern-expander
+           (-> (-> syntax? syntax?) case-pattern-expander?)]
+          [case-pattern-expander-transformer
+           (-> case-pattern-expander? (-> syntax? syntax?))]))
 
 (require racket/local)
 
@@ -29,10 +35,6 @@
     case-pattern-expander))
 
 (define (case-pattern-expander-transformer cpe)
-  (unless (case-pattern-expander? cpe)
-    (raise-argument-error 'case-pattern-expander-transformer
-                          "case-pattern-expander?"
-                          cpe))
   (define get-transformer
     (case-pattern-expander-ref cpe))
   (get-transformer cpe))
