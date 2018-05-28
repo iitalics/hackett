@@ -42,8 +42,20 @@
   [[(Var x)] x]
   [[_] (error! "not a variable")])
 
+(defn free : {Exp -> (List String)}
+    [[(Var x)] (List x)]
+    [[(App f a)] {(free f) ++ (free a)}]
+    [[(Lam x b)] (filter (/= x) (free b))])
+
 ;; ------------------------------------------
 
 (test {(show example) ==! "(App* (Var* \"x\") (Var* \"y\"))"})
 (test {(getVar (Var "z")) ==! "z"})
 (test {(getVar (E (Var* "z"))) ==! "z"})
+
+(test {(free (Var "x")) ==! (List "x")})
+(test {(free (App (Lam "x" (App (Var "x") (Var "y")))
+                  (Lam "z" (App (Var "a") (Var "z")))))
+       ==!
+       (List "y" "a")})
+
