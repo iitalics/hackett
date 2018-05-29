@@ -20,25 +20,35 @@
 
 (begin-for-syntax
   (define-syntax-class sig-entry
-    #:attributes [id norm]
+    #:attributes [[id 1] [decl 1]]
     #:literals [val type]
     #:datum-literals [: =]
-    [pattern (val id:id : {~type val-type:expr})
-      #:with norm #'(#%val-decl val-type)]
-    [pattern (type {~type id:id})
-      #:with norm #'(#%type-decl (#%opaque))]
-    [pattern (type {~type id:id} = {~type alias-type:expr})
-      #:with norm #'(#%type-decl (#%alias alias-type))]))
+    [pattern (val x:id : {~type val-type:expr})
+      #:with [id ...]   #'[x]
+      #:with [decl ...] #'[(#%val-decl val-type)]]
+    [pattern (type {~type X:id})
+      #:with [id ...]   #'[X]
+      #:with [decl ...] #'[(#%type-decl (#%opaque))]]
+    [pattern (type {~type X:id} = {~type alias-type:expr})
+      #:with [id ...]   #'[X]
+      #:with [decl ...] #'[(#%type-decl (#%alias alias-type))]])
+
+  (define-syntax-class sig-entries
+    #:attributes [[id 1] [decl 1]]
+    [pattern [entry:sig-entry ...]
+      #:with [id ...] #'[entry.id ... ...]
+      #:with [decl ...] #'[entry.decl ... ...]])
+  )
 
 (define-syntax-parser sig
   [(_ ent ...)
-   #:with [entry:sig-entry ...] ((make-syntax-introducer #t) #'[ent ...])
+   #:with entries:sig-entries ((make-syntax-introducer #t) #'[ent ...])
    #`(#%sig
-      #,(for/hash ([id (in-list (attribute entry.id))])
+      #,(for/hash ([id (in-list (attribute entries.id))])
           (values (syntax-e id) id))
-      #,(for/hash ([id (in-list (attribute entry.id))]
-                   [norm (in-list (attribute entry.norm))])
-          (values (syntax-e id) norm)))])
+      #,(for/hash ([id (in-list (attribute entries.id))]
+                   [decl (in-list (attribute entries.decl))])
+          (values (syntax-e id) decl)))])
 
 (define-syntax-parser Π
   #:datum-literals [:]
