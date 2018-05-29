@@ -53,11 +53,14 @@
               (hash-ref (sig-decls #'m.sig)
                         (syntax-e #'x)
                 #f))]
-      #:fail-when (and (not (decl-val? decl)) #'x)
+      #:fail-when (and (not (or (decl-val? decl)
+                                (decl-constructor? decl)))
+                       #'x)
       (format "not bound to a value in module ~a" (syntax-e #'m))
-      #:with (#%val-decl t) decl
+      #:with (_ t) decl
       #:with {~var t_qual (type (@ m.expansion-ctx))} #'t
       (syntax-property
+          ;; NOTE: use structure from "link/mod.rkt"
        (attach-type #'(#%app hash-ref m- 'x)
                     #'t_qual.expansion)
        disappeared-use
@@ -74,12 +77,8 @@
       #:fail-when (and (not (decl-constructor? decl)) #'x)
       (format "not bound to a constructor in module ~a" (syntax-e #'m))
 
-      ;; TODO: get the internal constructor-id from the m:module-binding ??
-      (error '#%dot_e
-             (string-append
-              "TODO: get the internal constructor-id from the module-binding?\n"
-              "  m.value: ~v")
-             (@ m.value))])))
+      #:with ctor-id (hash-ref (@ m.constructor-ids) (syntax-e #'x))
+      #'ctor-id])))
 
 (define-syntax-parser #%dot_τ
   [(_ {~module m:module-binding} ~! x:id)
@@ -114,7 +113,7 @@
       (syntax-parse stx
         #:literals [#%type:con]
         [(#%type:con x:id)
-         (define x-value (syntax-local-value #'x #f ctx))
+         (define x-value (syntax-local-value #'x (λ () #f) ctx))
          (match x-value
            [(opaque-type-constructor mod-id external-sym)
             #:when (free-identifier=? mod-id m-internal-id)

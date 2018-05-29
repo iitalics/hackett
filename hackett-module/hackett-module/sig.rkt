@@ -19,16 +19,20 @@
 (define-syntax val #f)
 
 (begin-for-syntax
+  (define-literal-set sig-surface-literals
+    #:datum-literals [: =]
+    [val type data])
+
   (define-syntax-class sig-entry
     #:attributes [[id 1] [decl 1]]
-    #:literals [val type]
-    #:datum-literals [: =]
+    #:literal-sets [sig-surface-literals]
     [pattern (val x:id : {~type val-type:expr})
       #:with [id ...]   #'[x]
       #:with [decl ...] #'[(#%val-decl val-type)]]
     [pattern (data X:id c:id ...)
-      #:with [[id decl] ...] #'[[X (#%type-decl (#%alias (#%type:con X)))]
-                                [c (#%constructor-decl X)]
+      #:with [[id decl] ...] #`[[X (#%type-decl (#%alias (#%type:con X)))]
+                                [c #,(syntax/loc this-syntax
+                                       (#%constructor-decl X))]
                                 ...]]
     [pattern (type {~type X:id})
       #:with [id ...]   #'[X]

@@ -5,9 +5,13 @@
     (mod
      (def f
        (λ (x)
+         M.T
+         #;
          (case x
-           [[M.T] 1]
-           [[M.F] 0]))))))
+           [M.T 1]
+           [M.F 0]))))))
+
+#|
 ==>
 (λ (M-)
   (define-syntax M
@@ -25,4 +29,4 @@
         [(#%dot M F) 0])))
   (hash 'f f))
 
-
+|#

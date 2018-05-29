@@ -32,13 +32,16 @@
    #:with sig-str (sig->string #'sig 10)
 
    #:with name- (generate-temporary #'name)
-   #:with [[id transformer] ...] (generate-module-var-bindings #'name #'name- #'sig)
+   #:with [([stx-id transformer] ...)
+           ([val-id expr] ...)]
+   (generate-module-var-bindings #'name #'name- #'sig)
 
    #'(begin
        (printf "\n---------\nbinding: ~a\n" 'name)
        (printf "inferred: ~a\n" 'sig-str)
        (define name- m-)
-       (define-syntaxes [id ...] (values transformer ...))
+       (define-syntaxes [stx-id ...] (values transformer ...))
+       (define-values [val-id ...] (values expr ...))
        (printf "module body: ")
        (pretty-write name))])
 
