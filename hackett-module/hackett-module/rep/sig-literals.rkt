@@ -14,7 +14,8 @@
                      sig-decls
                      decl-type?
                      decl-type-opaque?
-                     decl-val?))
+                     decl-val?
+                     decl-constructor?))
 
 (require (for-syntax racket/base
                      syntax/parse

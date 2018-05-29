@@ -14,6 +14,8 @@
              syntax/parse
              (only-in syntax/parse [attribute @])
              (only-in hackett/private/typecheck attach-type)
+             (only-in hackett/private/prop-case-pattern-expander
+                      prop:case-pattern-expander)
              hackett/private/util/stx
              "check/module-var.rkt"
              "util/stx-traverse.rkt"
@@ -31,26 +33,53 @@
      (syntax-parser
        [(_ pat)
         #:with tmp (generate-temporary 'module-ns-tmp)
-        #'{~and tmp {~parse pat (value-namespace-introduce #'tmp)}}]))))
+        #'{~and tmp {~parse pat (value-namespace-introduce #'tmp)}}])))
 
-(define-syntax-parser #%dot_e
-  #:literal-sets [sig-literals]
+  (struct proc+case-pat-exp [proc case-pat-trans]
+    #:property prop:procedure (struct-field-index proc)
+    #:property prop:case-pattern-expander
+    (λ (self) (proc+case-pat-exp-case-pat-trans self)))
+  )
 
-  [(_ {~module m:module-binding} ~! x:id)
-   #:with m- #'m.internal-id
-   #:do [(define decl
-           (hash-ref (sig-decls #'m.sig)
-                     (syntax-e #'x)
-                     #f))]
-   #:fail-when (and (not (decl-val? decl)) #'x)
-   (format "not bound to a value in module ~a" (syntax-e #'m))
-   #:with (#%val-decl t) decl
-   #:with {~var t_qual (type (@ m.expansion-ctx))} #'t
-   (syntax-property
-    (attach-type #'(#%app hash-ref m- 'x)
-                 #'t_qual.expansion)
-    disappeared-use
-    (syntax-local-introduce #'m))])
+(define-syntax #%dot_e
+  (proc+case-pat-exp
+   ;; as a normal macro
+   (syntax-parser
+     #:literal-sets [sig-literals]
+
+     [(_ {~module m:module-binding} ~! x:id)
+      #:with m- #'m.internal-id
+      #:do [(define decl
+              (hash-ref (sig-decls #'m.sig)
+                        (syntax-e #'x)
+                #f))]
+      #:fail-when (and (not (decl-val? decl)) #'x)
+      (format "not bound to a value in module ~a" (syntax-e #'m))
+      #:with (#%val-decl t) decl
+      #:with {~var t_qual (type (@ m.expansion-ctx))} #'t
+      (syntax-property
+       (attach-type #'(#%app hash-ref m- 'x)
+                    #'t_qual.expansion)
+       disappeared-use
+       (syntax-local-introduce #'m))])
+
+   ;; as a case-pattern expander
+   (syntax-parser
+     #:literal-sets [sig-literals]
+     [(_ {~module m:module-binding} ~! x:id)
+      #:do [(define decl
+              (hash-ref (sig-decls #'m.sig)
+                        (syntax-e #'x)
+                #f))]
+      #:fail-when (and (not (decl-constructor? decl)) #'x)
+      (format "not bound to a constructor in module ~a" (syntax-e #'m))
+
+      ;; TODO: get the internal constructor-id from the m:module-binding ??
+      (error '#%dot_e
+             (string-append
+              "TODO: get the internal constructor-id from the module-binding?\n"
+              "  m.value: ~v")
+             (@ m.value))])))
 
 (define-syntax-parser #%dot_τ
   [(_ {~module m:module-binding} ~! x:id)
