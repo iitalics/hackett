@@ -8,6 +8,7 @@
  syntax/parse/define
  hackett/private/type-language
  "rep/sig-literals.rkt"
+ (prefix-in l: "link/mod.rkt")
  (for-syntax racket/base
              racket/match
              racket/syntax
@@ -60,8 +61,7 @@
       #:with (_ t) decl
       #:with {~var t_qual (type (@ m.expansion-ctx))} #'t
       (syntax-property
-          ;; NOTE: use structure from "link/mod.rkt"
-       (attach-type #'(#%app hash-ref m- 'x)
+       (attach-type #'(#%app l:mod-value-ref m- 'x)
                     #'t_qual.expansion)
        disappeared-use
        (syntax-local-introduce #'m))])

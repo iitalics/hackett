@@ -6,6 +6,7 @@
  hackett/private/type-language
  (prefix-in hkt: hackett/base)
  (prefix-in sig: "sig.rkt")
+ (prefix-in l: "link/mod.rkt")
  (for-syntax racket/base
              syntax/parse
              syntax/kerncase
@@ -113,7 +114,7 @@
 ; bindings.
 ;
 ; When mod/acc is done parsing the definitions, it will leave behind an expression that generates
-; a hash table for the module. This expression will have a `sig⇒` syntax property on it containing
+; a `l:mod` struct for the module. This expression will have a `sig⇒` syntax property on it containing
 ; the inferred signature.
 
 (begin-for-syntax
@@ -141,7 +142,8 @@
 
    #:with [[sym/id ...] ...] #'[['val-id val-id] ...]
    #:with final-expression #'(let-values ([() s.residual])
-                               (hash sym/id ... ...))
+                               (l:mod (hash sym/id ... ...)
+                                      (hash)))
 
    (syntax-property #'final-expression
      mod/acc-sig-prop
