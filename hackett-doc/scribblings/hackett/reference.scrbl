@@ -244,10 +244,17 @@ as a pattern and as an expression. The pattern
   (pattern (Var x)   (E (Var* x)))
   (pattern (App a b) (E (App* a b)))
   (pattern (Lam x a) (E (Lam* x a)))
-  (defn free : {Exp t:-> (t:List t:String)}
-    [[(Var x)] (List x)]
-    [[(App f a)] {(free f) ++ (free a)}]
-    [[(Lam x b)] (filter (/= x) (free b))])
+  (eval:alts
+    (defn free : {Exp t:-> (t:List t:String)}
+      [[(Var x)] (List x)]
+      [[(App f a)] {(free f) ++ (free a)}]
+      [[(Lam x b)] (filter (/= x) (free b))])
+    (def free
+      (letrec ([free : {Exp -> (List String)}
+                (λ* [[(Var x)] (List x)]
+                    [[(App f a)] {(free f) ++ (free a)}]
+                    [[(Lam x b)] (filter (/= x) (free b))])])
+        free)))
   (free (Var "x"))
   (free (App (Lam "x" (App (Var "x") (Var "y")))
              (Lam "z" (App (Var "a") (Var "z")))))
@@ -365,7 +372,7 @@ then @racket[name-id] is bound directly to the type alias.
   (#:type n))
 
 If @racket[param-id]s are specified, then uses of the type alias must supply as many arguments as
-there are @racket[param-id]s. The arguments are supplied like those to a type constructor—i.e. 
+there are @racket[param-id]s. The arguments are supplied like those to a type constructor—i.e.
 @racket[(name-id type-argument ...)]—and the resulting type is @racket[type-expr] with each
 @racket[param-id] substituted with the corresponding @racket[type-argument].
 
