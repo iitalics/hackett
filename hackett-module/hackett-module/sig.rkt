@@ -9,7 +9,7 @@
 (require syntax/parse/define
          "rep/sig-literals.rkt"
          hackett/private/type-language
-         (only-in hackett/base type)
+         (only-in hackett/base type data)
          (for-syntax racket/base
                      syntax/parse
                      hackett/private/util/stx
@@ -26,6 +26,10 @@
     [pattern (val x:id : {~type val-type:expr})
       #:with [id ...]   #'[x]
       #:with [decl ...] #'[(#%val-decl val-type)]]
+    [pattern (data X:id c:id ...)
+      #:with [[id decl] ...] #'[[X (#%type-decl (#%alias (#%type:con X)))]
+                                [c (#%constructor-decl X)]
+                                ...]]
     [pattern (type {~type X:id})
       #:with [id ...]   #'[X]
       #:with [decl ...] #'[(#%type-decl (#%opaque))]]
