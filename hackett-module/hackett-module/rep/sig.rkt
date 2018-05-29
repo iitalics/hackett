@@ -146,6 +146,13 @@
            #:attr residual (residual #'[val-type.residual expansion]
                                      #'val-decl)]
 
+  ;; (#%constructor-decl type)
+  [pattern (constr-decl:#%constructor-decl (~var constr-type (type intdef-ctx)))
+           #:attr expansion (syntax/loc/props this-syntax
+                              (constr-decl constr-type.expansion))
+           #:attr residual (residual #'[constr-type.residual expansion]
+                                     #'constr-decl)]
+
   ;; (#%type-decl (#%alias type))
   [pattern (type-decl:#%type-decl
             (alias:#%alias (~var alias-type (type intdef-ctx))))

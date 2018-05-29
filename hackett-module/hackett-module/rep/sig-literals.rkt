@@ -3,6 +3,7 @@
 (provide #%sig
          #%pi-sig
          #%val-decl
+         #%constructor-decl
          #%type-decl
          #%alias
          #%opaque
@@ -36,10 +37,12 @@
 
 ;; A Decl is one of:
 ;;  - (#%val-decl Type)
+;;  - (#%constructor-decl Type)
 ;;  - (#%type-decl (#%alias Type))
 ;;  - (#%type-decl (#%opaque))
 
 (define-syntax #%val-decl #f)
+(define-syntax #%constructor-decl #f)
 (define-syntax #%type-decl #f)
 (define-syntax #%alias #f)
 (define-syntax #%opaque #f)
@@ -48,12 +51,16 @@
   (define sig-literal-ids
     (list #'#%sig
           #'#%pi-sig
-          #'#%val-decl #'#%type-decl #'#%alias #'#%opaque))
+          #'#%val-decl
+          #'#%constructor-decl
+          #'#%type-decl #'#%alias #'#%opaque))
 
   (define-literal-set sig-literals
     [#%sig
      #%pi-sig
-     #%val-decl #%type-decl #%alias #%opaque]))
+     #%val-decl
+     #%constructor-decl
+     #%type-decl #%alias #%opaque]))
 
 ;; -----------------------------------------------------------------
 
@@ -91,6 +98,13 @@
     (syntax-parse d
       #:literal-sets [sig-literals]
       [(#%val-decl _) #t]
+      [_ #f]))
+
+  ;; Decl -> Bool
+  (define (decl-constructor? d)
+    (syntax-parse d
+      #:literal-sets [sig-literals]
+      [(#%constructor-decl _) #t]
       [_ #f]))
 
   )
