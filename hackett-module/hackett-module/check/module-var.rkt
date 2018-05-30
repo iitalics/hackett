@@ -16,7 +16,8 @@
  hackett/private/util/stx
  "expand-check-prop.rkt"
  "../util/stx.rkt"
- (for-template "../rep/sig-literals.rkt")
+ (for-template "../rep/sig-literals.rkt"
+               (prefix-in l: "../link/mod.rkt"))
  (for-template hackett/private/type-language
                (only-in hackett/private/adt data-constructor)))
 
@@ -87,6 +88,8 @@
   (define constructor-bindings
     (for/list ([sym (in-list constructor-syms)]
                [id (in-list constructor-ids)])
+      (define/syntax-parse m- internal-id)
+      (define/syntax-parse sym* sym)
       (define/syntax-parse
         ({~literal #%constructor-decl} {~var t (type type-expansion-ctx)})
         (hash-ref (sig-decls s) sym))
@@ -94,11 +97,11 @@
       (list id
             ;; ========= TODO: finish implementing this ==========
             #'(data-constructor
-               (make-variable-like-transformer #'???)
+               (make-variable-like-transformer #'(l:mod-value-ref m- 'sym*))
                (quote-syntax t.expansion)
                (λ (sub-pats)
-                 #`(app/pat-info
-                    ???
+                 #`(l:app/pat-info
+                    (l:mod-pattern-ref m- 'sym*)
                     #,@sub-pats))
                #f))))
 
