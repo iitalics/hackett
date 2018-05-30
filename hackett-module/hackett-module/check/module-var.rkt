@@ -1,7 +1,6 @@
 #lang racket/base
 (provide
  (struct-out module-var-transformer)
- (struct-out opaque-type-constructor)
  generate-module-var-bindings
  syntax-local-bind-module
  module-binding)
@@ -15,6 +14,7 @@
  syntax/parse/class/local-value
  hackett/private/util/stx
  "expand-check-prop.rkt"
+ "../prop-reintroducible-dot-type.rkt"
  "../util/stx.rkt"
  (for-template "../rep/sig-literals.rkt"
                (only-in racket/base #%app quote)
@@ -43,10 +43,6 @@
       (λ (id)
         (attach-sig (replace-stx-loc x- id) sig)))
      stx)))
-
-(struct opaque-type-constructor
-  [module-internal-id
-   external-sym])
 
 ;; Generates bindings needed to introduce a module with the
 ;; given name and signature.
@@ -91,7 +87,7 @@
     (for/list ([sym (in-list opaque-type-syms)]
                [id (in-list opaque-type-ids)])
       (list id
-            #`(opaque-type-constructor
+            #`(reintroducible-dot-type
                (quote-syntax #,internal-id)
                '#,sym))))
 
