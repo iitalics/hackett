@@ -61,10 +61,12 @@
               pat-sym)))])
   (make-variable-like-transformer #'reintroducible-dot-type-struct))
 
-(define-syntax-class reintroducible-dot-type-id
+(define-syntax-class (reintroducible-dot-type-id [ctx #f])
   #:attributes [local-value module-id external-sym]
-  [pattern {~var || (local-value reintroducible-dot-type?)}
-           #:do [(match-define (reintroducible-dot-type m x)
+  [pattern x:id
+           #:attr local-value (syntax-local-value #'x (λ () #f) ctx)
+           #:when (reintroducible-dot-type? (attribute local-value))
+           #:do [(match-define (reintroducible-dot-type m s)
                    (attribute local-value))]
            #:with module-id m
-           #:with external-sym x])
+           #:with external-sym s])

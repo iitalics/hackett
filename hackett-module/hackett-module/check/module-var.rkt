@@ -44,6 +44,14 @@
         (attach-sig (replace-stx-loc x- id) sig)))
      stx)))
 
+(struct opaque-type-constructor
+  [module-id external-sym]
+  #:property prop:reintroducible-dot-type
+  (λ (self)
+    (reintroducible-dot-type
+     (opaque-type-constructor-module-id self)
+     (opaque-type-constructor-external-sym self))))
+
 ;; Generates bindings needed to introduce a module with the
 ;; given name and signature.
 ;; Id Id Signature ->
@@ -87,7 +95,7 @@
     (for/list ([sym (in-list opaque-type-syms)]
                [id (in-list opaque-type-ids)])
       (list id
-            #`(reintroducible-dot-type
+            #`(opaque-type-constructor
                (quote-syntax #,internal-id)
                '#,sym))))
 

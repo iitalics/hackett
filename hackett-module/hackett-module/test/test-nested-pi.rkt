@@ -5,3 +5,8 @@
     (Π ([N : (sig)])
       (sig (type X = M.T)))))
 
+
+(def-module G
+  (λₘ ([M : (sig (type T))])
+    (mod
+      (type U M.T))))

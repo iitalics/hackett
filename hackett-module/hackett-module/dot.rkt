@@ -114,7 +114,7 @@
     (define (traverse stx)
       (syntax-parse stx
         #:literals [#%type:con]
-        [(#%type:con x:reintroducible-dot-type-id)
+        [(#%type:con {~var x (reintroducible-dot-type-id ctx)})
          (if (free-identifier=? #'x.module-id #'m/internal)
              (syntax/loc stx (#%dot_τ m/prefix x.external-sym))
              stx)]
