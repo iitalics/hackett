@@ -52,18 +52,11 @@
   ; generate #%type:con's for opaque types
 
   (define opaque-type-syms
-    (syntax-parse s
-      #:literal-sets [sig-literals]
-      [(#%pi-sig . _) '()]
-      [(#%sig . _)
-       (for/list ([(sym decl) (in-hash (sig-decls s))]
-                  #:when (decl-type-opaque? decl))
-         sym)]))
+    (matching-decl-symbols s decl-type-opaque?))
 
   (define opaque-type-ids
-    (generate-temporaries
-     (for/list ([s (in-list opaque-type-syms)])
-       (format-symbol "opaque:~a.~a" (syntax-e name) s))))
+    (generate-prefixed-temporaries (format-symbol "opaque:~a." name)
+                                   opaque-type-syms))
 
   (define opaque-type-bindings
     (for/list ([sym (in-list opaque-type-syms)]
@@ -85,18 +78,11 @@
   ; generate data-constructor bindings for data types
 
   (define constructor-syms
-    (syntax-parse s
-      #:literal-sets [sig-literals]
-      [(#%pi-sig . _) '()]
-      [(#%sig . _)
-       (for/list ([(sym decl) (in-hash (sig-decls s))]
-                  #:when (decl-constructor? decl))
-         sym)]))
+    (matching-decl-symbols s decl-constructor?))
 
   (define constructor-ids
-    (generate-temporaries
-     (for/list ([s (in-list constructor-syms)])
-       (format-symbol "ctor:~a.~a" (syntax-e name) s))))
+    (generate-prefixed-temporaries (format-symbol "ctor:~a." name)
+                                   constructor-syms))
 
   (define constructor-bindings
     (for/list ([sym (in-list constructor-syms)]
@@ -204,3 +190,22 @@
            #:attr constructor-ids ctor-sym->id
            #:attr expansion-ctx
            (module-make-type-expansion-context (@ sig) (@ opaque-ids))])
+
+;; ---------------------------------------------------------
+
+;; Signature [Decl -> Bool] -> [Listof Symbol]
+(define (matching-decl-symbols s decl-matches?)
+  (syntax-parse s
+    #:literal-sets [sig-literals]
+    [(#%pi-sig . _) '()]
+    [(#%sig . _)
+     (for/list ([(sym decl) (in-hash (sig-decls s))]
+                #:when (decl-matches? decl))
+       sym)]))
+
+;; SymStr [Listof SymStr] -> [Listof Id]
+(define (generate-prefixed-temporaries prefix symstrs)
+  (generate-temporaries
+   (for/list ([s (in-list symstrs)])
+     (format-symbol "~a~a" prefix s))))
+
