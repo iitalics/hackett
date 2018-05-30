@@ -17,6 +17,7 @@
  "expand-check-prop.rkt"
  "../util/stx.rkt"
  (for-template "../rep/sig-literals.rkt"
+               (only-in racket/base #%app quote)
                (prefix-in l: "../link/mod.rkt"))
  (for-template hackett/private/type-language
                (only-in hackett/private/adt
@@ -54,14 +55,37 @@
 ;;         [Listof [List Id Stx]]]               ; value binding
 (define (generate-module-var-bindings name internal-id s)
 
-  ; generate #%type:con's for opaque types
-
   (define opaque-type-syms
     (matching-decl-symbols s decl-type-opaque?))
 
   (define opaque-type-ids
     (generate-prefixed-temporaries (format-symbol "opaque:~a." name)
                                    opaque-type-syms))
+
+  (define data-type-syms
+    (matching-decl-symbols s decl-type-data?))
+
+  (define data-type-ids
+    (generate-prefixed-temporaries (format-symbol "data:~a." name)
+                                   data-type-syms))
+
+  (define constructor-syms
+    (matching-decl-symbols s decl-constructor?))
+
+  (define constructor-ids
+    (generate-prefixed-temporaries (format-symbol "ctor:~a." name)
+                                   constructor-syms))
+
+  (define constructor-sym->id
+    (make-immutable-hash (map cons constructor-syms constructor-ids)))
+
+  (define type-expansion-ctx
+    (module-make-type-expansion-context
+     s
+     (make-immutable-hash (map cons opaque-type-syms opaque-type-ids))
+     (make-immutable-hash (map cons data-type-syms data-type-ids))))
+
+  ; generate #%type:con's for opaque types
 
   (define opaque-type-bindings
     (for/list ([sym (in-list opaque-type-syms)]
@@ -77,53 +101,39 @@
 
   ;; generate #%type:con's for data types
 
-  (define data-type-syms
-    (matching-decl-symbols s decl-type-data?))
-
-  (define data-type-ids
-    (generate-prefixed-temporaries (format-symbol "data:~a." name)
-                                   data-type-syms))
-
   (define data-type-bindings
     (for/list ([sym (in-list data-type-syms)]
                [id (in-list data-type-ids)])
       ;; get the constructors
-      ;; TODO: find the "new" constructor ids for the new module
-      ;;       being introduced
       (define/syntax-parse
         ({~literal #%type-decl} ({~literal #%data} c ...))
         (hash-ref (sig-decls s) sym))
+
+      ;; find the "new" constructor ids for the module being introduced
+      (define/syntax-parse
+        [c-binding-id ...]
+        (for/list ([c-id (in-list (@ c))])
+          (or (for/first ([(sym id) (in-hash (sig-internal-ids s))]
+                          #:when (free-identifier=? c-id id))
+                (hash-ref constructor-sym->id sym))
+              (raise-syntax-error c-id
+                "constructor declaration not found in signature"))))
+
       ;; TODO: get the actual type-var arity
       (define type-var-arity 0)
+
       (list id
             #`(data-type-constructor
                (quote-syntax (#%type:con #,id))
                '#,type-var-arity
-               ;; TODO:
-               ;;   these are wrong, it should insert the same temporaries that
-               ;;   it would generate the correct corresponding identifiers from
-               ;;   the `constructor-ids` list defined later in this function
-               (list (quote-syntax c) ...)
+               (list (quote-syntax c-binding-id) ...)
                #f))))
 
   (define/syntax-parse [data-sym ...] data-type-syms)
   (define/syntax-parse [data-id ...] data-type-ids)
   (define/syntax-parse [[data-sym/id ...] ...] #'[['data-sym (quote-syntax data-id)] ...])
 
-  (define type-expansion-ctx
-    (module-make-type-expansion-context
-     s
-     (make-immutable-hash (map cons opaque-type-syms opaque-type-ids))
-     (make-immutable-hash (map cons data-type-syms data-type-ids))))
-
   ; generate data-constructor bindings for data types
-
-  (define constructor-syms
-    (matching-decl-symbols s decl-constructor?))
-
-  (define constructor-ids
-    (generate-prefixed-temporaries (format-symbol "ctor:~a." name)
-                                   constructor-syms))
 
   (define constructor-bindings
     (for/list ([sym (in-list constructor-syms)]
@@ -142,7 +152,7 @@
                (λ (sub-pats)
                  #`(l:app/pat-info
                     (l:mod-pattern-ref m- 'sym*)
-                    #,@sub-pats))
+                    #,sub-pats))
                #f))))
 
   (define/syntax-parse [ctor-sym ...] constructor-syms)
@@ -268,4 +278,3 @@
   (generate-temporaries
    (for/list ([s (in-list symstrs)])
      (format-symbol "~a~a" prefix s))))
-

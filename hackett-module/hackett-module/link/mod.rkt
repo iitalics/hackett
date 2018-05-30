@@ -39,7 +39,8 @@
 
 (define-match-expander app/pat-info
   (syntax-parser
-    [(_ pat-info-expr:id (sub-pat ...))
+    ;; WARNING: expression duplication
+    [(_ pat-info-expr:expr (sub-pat ...))
      #'(? (pat-info-predicate pat-info-expr)
           (app (pat-info-->values pat-info-expr) sub-pat ...))]))
 

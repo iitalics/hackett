@@ -5,8 +5,6 @@
     (mod
      (def f
        (λ (x)
-         M.T
-         #;
          (case x
            [M.T 1]
            [M.F 0]))))))
