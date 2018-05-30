@@ -177,9 +177,9 @@
 
       (list id
             #'(data-constructor
-               (make-variable-like-transformer (quote-syntax val-id))
+               (make-variable-like-transformer (quote-syntax val-id*))
                (quote-syntax t.expansion)
-               (λ (sub-pats) #`(l:app/pat-info pat-id #,sub-pats))
+               (λ (sub-pats) #`(l:app/pat-info pat-id* #,sub-pats))
                #f))))
 
   (define/syntax-parse [ctor-sym ...] constructor-syms)
