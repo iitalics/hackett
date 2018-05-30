@@ -89,14 +89,20 @@
            (internal-definition-context-introduce ctx stx))
 
          (syntax-local-bind-syntaxes (list #'x-) #f ctx)
-         (syntax-local-bind-module #'x #'x- #'A.expansion ctx)]
+         (define val-ids/exprs
+           (syntax-local-bind-module #'x #'x- #'A.expansion ctx))]
 
    #:with x-- (intro #'x-)
    #:with [body- B] (sig⇒ #'body ctx)
    #:with B* (reintroduce-#%dot (intro #'x) #'x-- #'B ctx)
+   #:with [[val-id val-expr] ...] val-ids/exprs
    (internal-definition-context-track
     ctx
-    (attach-sig #'(λ (x--) body-) #'(#%pi-sig ([x-- A.expansion]) B*)))])
+    (attach-sig #'(λ (x--)
+                    (define-values [val-id ...]
+                      (values val-expr ...))
+                    body-)
+                #'(#%pi-sig ([x-- A.expansion]) B*)))])
 
 (define-syntax-parser appₘ
   #:literals [#%pi-sig]

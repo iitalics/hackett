@@ -169,8 +169,8 @@
                [id (in-list constructor-ids)]
                [pat-id (in-list constructor-pat-ids)]
                [val-id (in-list constructor-val-ids)])
-      (define/syntax-parse [pat-id* val-id*]
-        (list pat-id val-id))
+      (define/syntax-parse [m-id* sym* pat-id* val-id*]
+        (list internal-id sym pat-id val-id))
       (define/syntax-parse
         ({~literal #%constructor-decl} {~var t (type type-expansion-ctx)})
         (hash-ref (sig-decls s) sym))
@@ -212,17 +212,26 @@
   (list all-syntax-bindings
         all-value-bindings))
 
-;; Id Id Signature IntDefCtx -> Void
-;; signature must be expanded. ASSUME: internal-id should be
+;; Id Id Signature IntDefCtx -> [Listof [List Id Expr-Stx]]
+;; adds bindings introduced by the module to the given intdef-ctx. returns
+;; an association list of the value bindings that should be introduced along
+;; with the module.
+;;
+;; ASSUME: signature must be expanded. internal-id should be
 ;; already bound in the intdef-ctx.
 (define (syntax-local-bind-module name internal-id signature intdef-ctx)
   ;; NOTE: we ignore the RHS of the value bindings,
   ;;   since this is used for local-expanding, not evalutating.
-  (define/syntax-parse [([stx-id transformer] ...)
-                        ([val-id _] ...)]
+  (match-define (list ids/transformers ids/exprs)
     (generate-module-var-bindings name internal-id signature))
+  (define/syntax-parse [([stx-id transformer] ...)
+                        ([val-id expr] ...)]
+    (list ids/transformers ids/exprs))
   (syntax-local-bind-syntaxes (@ val-id) #f intdef-ctx)
-  (syntax-local-bind-syntaxes (@ stx-id) #`(values transformer ...) intdef-ctx))
+  (syntax-local-bind-syntaxes (@ stx-id) #`(values transformer ...) intdef-ctx)
+  (for/list ([id/expr (in-list ids/exprs)])
+    (list (internal-definition-context-introduce intdef-ctx (first id/expr))
+          (internal-definition-context-introduce intdef-ctx (second id/expr)))))
 
 ;; Signature [Hash Symbol Id] [Hash Symbol Id] -> IntDefCtx
 (define (module-make-type-expansion-context sig opaque-sym->id data-sym->id)
