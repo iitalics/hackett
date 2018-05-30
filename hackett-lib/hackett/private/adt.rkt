@@ -222,10 +222,9 @@
              #:do [(define val (attribute constructor.local-value))]
              #:attr pat (pat-con #'constructor val)
              #:attr disappeared-uses (list (syntax-local-introduce #'constructor))]
-    [pattern (~parens constructor:data-constructor-val ~! arg:pat ...)
-             #:do [(define val (attribute constructor.local-value))]
+    [pattern (~parens head:pat ~! arg:pat ...)
              #:attr pat (pat-app this-syntax
-                                 (pat-con #'constructor val)
+                                 (attribute head.pat)
                                  (attribute arg.pat))
              #:attr disappeared-uses (cons (syntax-local-introduce #'constructor)
                                            (append* (attribute arg.disappeared-uses)))]
