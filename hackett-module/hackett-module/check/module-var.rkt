@@ -52,6 +52,15 @@
      (opaque-type-constructor-module-id self)
      (opaque-type-constructor-external-sym self))))
 
+(struct data-type-constructor/reintroducible
+  data-type-constructor
+  [module-id external-sym]
+  #:property prop:reintroducible-dot-type
+  (λ (self)
+    (reintroducible-dot-type
+     (data-type-constructor/reintroducible-module-id self)
+     (data-type-constructor/reintroducible-external-sym self))))
+
 ;; Generates bindings needed to introduce a module with the
 ;; given name and signature.
 ;; Id Id Signature ->
@@ -127,11 +136,14 @@
       (define type-var-arity 0)
 
       (list id
-            #`(data-type-constructor
-               (quote-syntax (#%type:con #,id))
-               '#,type-var-arity
-               (list (quote-syntax c-binding-id) ...)
-               #f))))
+            #`(data-type-constructor/reintroducible
+               (quote-syntax (#%type:con #,id))        ; type
+               '#,type-var-arity                       ; arity
+               (list (quote-syntax c-binding-id) ...)  ; constructor ids
+               #f                                      ; fixity
+               (quote-syntax #,internal-id)            ; module id
+               '#,sym                                  ; external sym
+               ))))
 
   (define/syntax-parse [data-sym ...] data-type-syms)
   (define/syntax-parse [data-id ...] data-type-ids)
