@@ -9,6 +9,7 @@
          "../util/stx.rkt"
          racket/syntax
          syntax/parse
+         syntax/id-set
          (only-in syntax/parse [attribute @])
          threading
          hackett/private/typecheck
@@ -135,14 +136,15 @@
             A-decl*
             B-decl*)))))
 
-;; Id Decl -> TransformerStx or #f
+;; Decl -> TransformerStx or #f
 (define (decl->transformer-stx decl)
   (syntax-parse decl
     #:literal-sets [sig-literals]
     [(#%val-decl _) #f]
+    [(#%constructor-decl _) #f]
     [(#%type-decl (#%opaque)) #f]
-    [(#%type-decl (#%alias t))
-     #'(make-variable-like-transformer (quote-syntax t))]))
+    [(#%type-decl (#%data c ...)) #f]
+    [(#%type-decl (#%alias t)) #'(make-variable-like-transformer (quote-syntax t))]))
 
 ;; Decl Decl -> Bool
 (define (sig-entry-matches? A B)
@@ -150,12 +152,21 @@
     #:literal-sets [sig-literals]
     [[(#%val-decl A) (#%val-decl B)]
      (type-matches? #'A #'B)]
+    [[(#%constructor-decl A) (#%val-decl B)]
+     (type-matches? #'A #'B)]
+    [[(#%constructor-decl A) (#%constructor-decl B)]
+     (type-equal? #'A #'B)]
+
+    [[(#%type-decl _) (#%type-decl (#%opaque))]
+     #true]
     [[(#%type-decl (#%alias A)) (#%type-decl (#%alias B))]
      (type-equal? #'A #'B)]
-    [[(#%type-decl (#%opaque)) (#%type-decl (#%opaque))]
-     #true]
-    [[(#%type-decl (#%alias _)) (#%type-decl (#%opaque))]
-     #true]
+    [[(#%type-decl (#%data c-A ...)) (#%type-decl (#%data c-B ...))]
+     ; use set comparison because order doesn't matter
+     (free-id-set=?
+      (immutable-free-id-set (@ c-A))
+      (immutable-free-id-set (@ c-B)))]
+
     [[_ _]
      #false]))
 
