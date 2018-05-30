@@ -59,6 +59,7 @@
                                 (decl-constructor? decl)))
                        #'x)
       (format "not bound to a value in module ~a" (syntax-e #'m))
+
       #:with (_ t) decl
       #:with {~var t_qual (type (@ m.expansion-ctx))} #'t
       (syntax-property
@@ -78,8 +79,7 @@
       #:fail-when (and (not (decl-constructor? decl)) #'x)
       (format "not bound to a constructor in module ~a" (syntax-e #'m))
 
-      #:with ctor-id (hash-ref (@ m.constructor-ids) (syntax-e #'x))
-      #'ctor-id])))
+      (hash-ref (@ m.pattern-ids) (syntax-e #'x))])))
 
 (define-syntax-parser #%dot_τ
   [(_ {~module m:module-binding} ~! x:id)
