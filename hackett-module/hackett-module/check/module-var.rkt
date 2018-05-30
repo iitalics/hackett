@@ -34,6 +34,7 @@
    signature
    opaque-type-ids
    data-type-ids
+   value-ids
    pattern-ids]
   #:property prop:procedure
   (λ (self stx)
@@ -94,6 +95,13 @@
 
   (define constructor-sym->id
     (make-immutable-hash (map cons constructor-syms constructor-ids)))
+
+  (define value-syms
+    (matching-decl-symbols s decl-val?))
+
+  (define value-ids (generate-temporaries value-syms))
+
+  ;; make intdef context for expanding types
 
   (define type-expansion-ctx
     (module-make-type-expansion-context
@@ -186,6 +194,17 @@
   (define/syntax-parse [ctor-id ...] constructor-ids)
   (define/syntax-parse [[ctor-sym/id ...] ...] #'[['ctor-sym (quote-syntax ctor-id)] ...])
 
+  ;; generate mod-value-ref expressions for values
+
+  (define value-bindings
+    (for/list ([sym (in-list value-syms)]
+               [id (in-list value-ids)])
+      (list id #`(l:mod-value-ref #,internal-id '#,sym))))
+
+  (define/syntax-parse [val-sym ...] value-syms)
+  (define/syntax-parse [val-id ...] value-ids)
+  (define/syntax-parse [[val-sym/id ...] ...] #'[['val-sym (quote-syntax val-id)] ...])
+
   ;; generate module-var-transformer binding for module name
 
   (define module-binding
@@ -195,6 +214,7 @@
              (quote-syntax #,s)
              (hash op-sym/id ... ...)
              (hash data-sym/id ... ...)
+             (hash ctor-sym/id ... ... val-sym/id ... ...)
              (hash ctor-sym/id ... ...))))
 
   ;; ------
@@ -207,7 +227,8 @@
 
   (define all-value-bindings
     (append constructor-val-bindings
-            constructor-pat-bindings))
+            constructor-pat-bindings
+            value-bindings))
 
   (list all-syntax-bindings
         all-value-bindings))
@@ -284,19 +305,21 @@
 
 (define-syntax-class module-binding
   #:description "module name"
-  #:attributes [value internal-id sig opaque-ids pattern-ids expansion-ctx]
+  #:attributes [value internal-id sig opaque-ids value-ids pattern-ids expansion-ctx]
   [pattern {~var m (local-value module-var-transformer?)}
            #:attr value (@ m.local-value)
            #:do [(match-define (module-var-transformer x-
                                                        s
                                                        op-sym->id
                                                        data-sym->id
+                                                       val-sym->id
                                                        pat-sym->id)
                    (@ value))]
            #:with internal-id (syntax-local-introduce x-)
            #:attr sig (syntax-local-introduce s)
            #:attr opaque-ids op-sym->id
            #:attr data-ids data-sym->id
+           #:attr value-ids val-sym->id
            #:attr pattern-ids pat-sym->id
            #:attr expansion-ctx
            (module-make-type-expansion-context (@ sig)

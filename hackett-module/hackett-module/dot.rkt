@@ -60,11 +60,12 @@
                        #'x)
       (format "not bound to a value in module ~a" (syntax-e #'m))
 
+      #:with expr (hash-ref (@ m.value-ids) (syntax-e #'x))
+
       #:with (_ t) decl
       #:with {~var t_qual (type (@ m.expansion-ctx))} #'t
       (syntax-property
-       (attach-type #'(#%app l:mod-value-ref m- 'x)
-                    #'t_qual.expansion)
+       (attach-type #'expr #'t_qual.expansion)
        disappeared-use
        (syntax-local-introduce #'m))])
 
