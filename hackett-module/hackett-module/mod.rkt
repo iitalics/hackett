@@ -7,7 +7,8 @@
  (only-in hackett/private/adt
           data-constructor?
           data-constructor-arity
-          data-constructor-make-match-pat)
+          data-constructor-make-match-pat
+          data-constructor-spec)
  (prefix-in hkt: hackett/base)
  (prefix-in sig: "sig.rkt")
  (prefix-in l: "link/mod.rkt")
@@ -65,18 +66,21 @@
     ;; NOTE: we are not introducing the type namespace
     ;;   here, because they will be introduced by `sig:val`
     ;;   and `sig:type` (the surface syntax).
-    [pattern (hkt:: id:id type:expr {~optional #:exact})
+    [pattern (hkt:: ~! id:id type:expr {~optional #:exact})
              #:with sig-entry #'(sig:val id : type)
              #:with [val-id ...] #'[id]
              #:with residual (syntax-property #'(values)
                                               disappeared-binding
                                               (syntax-local-introduce #'id))]
-    [pattern (hkt:data id:id ctor:id ...)
-             #:with sig-entry #'(sig:data id ctor ...)
-             #:with [val-id ...] #'[ctor ...]
+    [pattern (hkt:data id:id
+                       {~and {~seq variant-stuff ...}
+                             {~seq variant:data-constructor-spec}}
+                       ...)
+             #:with sig-entry #'(sig:data id variant-stuff ... ...)
+             #:with [val-id ...] #'[variant.tag ...]
              ;; TODO: attach the other things
              #:with residual #'(values)]
-    [pattern (hkt:type spec rhs:expr)
+    [pattern (hkt:type ~! spec rhs:expr)
              #:fail-unless (identifier? #'spec)
              "type aliases with arguments not allowed in modules"
              #:with sig-entry #'(sig:type spec = rhs)

@@ -10,9 +10,13 @@
 (require syntax/parse/define
          "rep/sig-literals.rkt"
          hackett/private/type-language
+         hackett/private/type-reqprov
+         (only-in hackett/private/adt data-constructor-spec)
          (only-in hackett/base type data)
          (for-syntax racket/base
                      syntax/parse
+                     (only-in syntax/parse [attribute @])
+                     syntax/parse/experimental/template
                      hackett/private/util/stx
                      "rep/sig.rkt"
                      ))
@@ -30,10 +34,11 @@
     [pattern (val x:id : {~type val-type:expr})
       #:with [id ...]   #'[x]
       #:with [decl ...] #'[(#%val-decl val-type)]]
-    [pattern (data X:id c:id ...)
-      #:with [[id decl] ...] #`[[X (#%type-decl (#%data c ...))]
-                                [c #,(syntax/loc this-syntax
-                                       (#%constructor-decl X))]
+    [pattern (data {~type X:id} c:data-constructor-spec ...)
+      #:with [c-type ...] (type-namespace-introduce
+                           (template [(?->* c.arg ... X) ...]))
+      #:with [[id decl] ...] #`[[X (#%type-decl (#%data c.tag ...))]
+                                [c.tag (#%constructor-decl c-type)]
                                 ...]]
     [pattern (type {~type X:id})
       #:with [id ...]   #'[X]
