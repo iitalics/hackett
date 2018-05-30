@@ -31,7 +31,7 @@
       #:with [id ...]   #'[x]
       #:with [decl ...] #'[(#%val-decl val-type)]]
     [pattern (data X:id c:id ...)
-      #:with [[id decl] ...] #`[[X (#%type-decl (#%alias (#%type:con X)))]
+      #:with [[id decl] ...] #`[[X (#%type-decl (#%data c ...))]
                                 [c #,(syntax/loc this-syntax
                                        (#%constructor-decl X))]
                                 ...]]

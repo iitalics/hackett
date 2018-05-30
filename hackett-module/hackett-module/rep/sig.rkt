@@ -42,6 +42,7 @@
              #:with {~var || (expanded-name intdef-ctx)}
              (local-expand #'stx 'expression literal-ids intdef-ctx)]))
 
+(define-expansion-class ref-id "id reference" expanded-id sig-literal-ids)
 (define-expansion-class sig "sig" expanded-sig sig-literal-ids)
 (define-expansion-class decl "sig declaration" expanded-decl sig-literal-ids)
 
@@ -73,6 +74,12 @@
   (signature-substs s mapping))
 
 ;; ---------------------------------------------
+
+(define-syntax-class (expanded-id intdef-ctx)
+  #:description #f
+  #:attributes [expansion residual]
+  [pattern expansion:id
+           #:with residual (residual #'[] #'expansion)])
 
 (define-syntax-class (expanded-sig intdef-ctx)
   #:description #f
@@ -165,7 +172,17 @@
   [pattern (type-decl:#%type-decl (opaque:#%opaque))
            #:attr expansion this-syntax
            #:attr residual (residual #'[expansion]
-                                     #'type-decl)])
+                                     #'type-decl)]
+
+  ;; (#%type-decl (#%data constructor-id ...))
+  [pattern (type-decl:#%type-decl
+            (data:#%data {~var constructor-id (ref-id intdef-ctx)} ...))
+           #:attr expansion (syntax/loc/props this-syntax
+                              (type-decl (data constructor-id.expansion ...)))
+           #:attr residual (residual #'[constructor-id.residual ... expansion]
+                                     #'type-decl)]
+
+  )
 
 ;; ---------------------------------------------
 

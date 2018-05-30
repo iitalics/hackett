@@ -7,6 +7,7 @@
          #%type-decl
          #%alias
          #%opaque
+         #%data
          (for-syntax sig-literals
                      sig-literal-ids
                      ; ---
@@ -14,6 +15,7 @@
                      sig-decls
                      decl-type?
                      decl-type-opaque?
+                     decl-type-data?
                      decl-val?
                      decl-constructor?))
 
@@ -41,12 +43,14 @@
 ;;  - (#%constructor-decl Type)
 ;;  - (#%type-decl (#%alias Type))
 ;;  - (#%type-decl (#%opaque))
+;;  - (#%type-decl (#%data Id ...))  ; constructor ids
 
 (define-syntax #%val-decl #f)
 (define-syntax #%constructor-decl #f)
 (define-syntax #%type-decl #f)
 (define-syntax #%alias #f)
 (define-syntax #%opaque #f)
+(define-syntax #%data #f)
 
 (begin-for-syntax
   (define sig-literal-ids
@@ -54,14 +58,14 @@
           #'#%pi-sig
           #'#%val-decl
           #'#%constructor-decl
-          #'#%type-decl #'#%alias #'#%opaque))
+          #'#%type-decl #'#%alias #'#%opaque #'#%data))
 
   (define-literal-set sig-literals
     [#%sig
      #%pi-sig
      #%val-decl
      #%constructor-decl
-     #%type-decl #%alias #%opaque]))
+     #%type-decl #%alias #%opaque #%data]))
 
 ;; -----------------------------------------------------------------
 
@@ -92,6 +96,13 @@
     (syntax-parse d
       #:literal-sets [sig-literals]
       [(#%type-decl (#%opaque)) #t]
+      [_ #f]))
+
+  ;; Decl -> Bool
+  (define (decl-type-data? d)
+    (syntax-parse d
+      #:literal-sets [sig-literals]
+      [(#%type-decl (#%data . _)) #t]
       [_ #f]))
 
   ;; Decl -> Bool

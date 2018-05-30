@@ -19,16 +19,20 @@
  (for-template "../rep/sig-literals.rkt"
                (prefix-in l: "../link/mod.rkt"))
  (for-template hackett/private/type-language
-               (only-in hackett/private/adt data-constructor)))
+               (only-in hackett/private/adt
+                        data-constructor
+                        [type-constructor data-type-constructor])))
 
 ;; internal-id : Id
 ;; signature : Signature
 ;; opaque-type-ids : [Hash Symbol Id]
+;; data-type-ids : [Hash Symbol Id]
 ;; constructor-ids : [Hash Symbol Id]
 (struct module-var-transformer
   [internal-id
    signature
    opaque-type-ids
+   data-type-ids
    constructor-ids]
   #:property prop:procedure
   (λ (self stx)
@@ -71,10 +75,46 @@
   (define/syntax-parse [op-id ...] opaque-type-ids)
   (define/syntax-parse [[op-sym/id ...] ...] #'[['op-sym (quote-syntax op-id)] ...])
 
+  ;; generate #%type:con's for data types
+
+  (define data-type-syms
+    (matching-decl-symbols s decl-type-data?))
+
+  (define data-type-ids
+    (generate-prefixed-temporaries (format-symbol "data:~a." name)
+                                   data-type-syms))
+
+  (define data-type-bindings
+    (for/list ([sym (in-list data-type-syms)]
+               [id (in-list data-type-ids)])
+      ;; get the constructors
+      ;; TODO: find the "new" constructor ids for the new module
+      ;;       being introduced
+      (define/syntax-parse
+        ({~literal #%type-decl} ({~literal #%data} c ...))
+        (hash-ref (sig-decls s) sym))
+      ;; TODO: get the actual type-var arity
+      (define type-var-arity 0)
+      (list id
+            #`(data-type-constructor
+               (quote-syntax (#%type:con #,id))
+               '#,type-var-arity
+               ;; TODO:
+               ;;   these are wrong, it should insert the same temporaries that
+               ;;   it would generate the correct corresponding identifiers from
+               ;;   the `constructor-ids` list defined later in this function
+               (list (quote-syntax c) ...)
+               #f))))
+
+  (define/syntax-parse [data-sym ...] data-type-syms)
+  (define/syntax-parse [data-id ...] data-type-ids)
+  (define/syntax-parse [[data-sym/id ...] ...] #'[['data-sym (quote-syntax data-id)] ...])
+
   (define type-expansion-ctx
     (module-make-type-expansion-context
      s
-     (make-immutable-hash (map cons opaque-type-syms opaque-type-ids))))
+     (make-immutable-hash (map cons opaque-type-syms opaque-type-ids))
+     (make-immutable-hash (map cons data-type-syms data-type-ids))))
 
   ; generate data-constructor bindings for data types
 
@@ -117,11 +157,13 @@
              (quote-syntax #,internal-id)
              (quote-syntax #,s)
              (hash op-sym/id ... ...)
+             (hash data-sym/id ... ...)
              (hash ctor-sym/id ... ...))))
 
   (define all-syntax-bindings
     (cons module-binding
           (append opaque-type-bindings
+                  data-type-bindings
                   constructor-bindings)))
 
   (list all-syntax-bindings
@@ -139,8 +181,8 @@
   (syntax-local-bind-syntaxes (@ val-id) #f intdef-ctx)
   (syntax-local-bind-syntaxes (@ stx-id) #`(values transformer ...) intdef-ctx))
 
-;; Signature [Hash Symbol Id] -> IntDefCtx
-(define (module-make-type-expansion-context sig opaque-sym->id)
+;; Signature [Hash Symbol Id] [Hash Symbol Id] -> IntDefCtx
+(define (module-make-type-expansion-context sig opaque-sym->id data-sym->id)
   (syntax-parse sig
     #:literal-sets [sig-literals]
     [(#%sig internal-ids:hash-literal
@@ -172,6 +214,14 @@
               (quote-syntax (#%type:con type-con-id)))
            intdef-ctx)]
 
+         [(#%type-decl (#%data . _))
+          #:with type-con-id (hash-ref data-sym->id sym)
+          (syntax-local-bind-syntaxes
+           (list internal-id)
+           #'(make-variable-like-transformer
+              (quote-syntax (#%type:con type-con-id)))
+           intdef-ctx)]
+
          [_ (void)]))
 
      intdef-ctx]
@@ -185,14 +235,21 @@
   #:attributes [value internal-id sig opaque-ids constructor-ids expansion-ctx]
   [pattern {~var m (local-value module-var-transformer?)}
            #:attr value (@ m.local-value)
-           #:do [(match-define (module-var-transformer x- s op-sym->id ctor-sym->id)
+           #:do [(match-define (module-var-transformer x-
+                                                       s
+                                                       op-sym->id
+                                                       data-sym->id
+                                                       ctor-sym->id)
                    (@ value))]
            #:with internal-id (syntax-local-introduce x-)
            #:attr sig (syntax-local-introduce s)
            #:attr opaque-ids op-sym->id
+           #:attr data-ids data-sym->id
            #:attr constructor-ids ctor-sym->id
            #:attr expansion-ctx
-           (module-make-type-expansion-context (@ sig) (@ opaque-ids))])
+           (module-make-type-expansion-context (@ sig)
+                                               (@ opaque-ids)
+                                               (@ data-ids))])
 
 ;; ---------------------------------------------------------
 

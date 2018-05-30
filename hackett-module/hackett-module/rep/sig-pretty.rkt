@@ -64,7 +64,10 @@
     [(#%val-decl t) `(val ,name : ,(type->string/sig #'t))]
     [(#%constructor-decl t) `(constructor ,name : ,(type->string/sig #'t))]
     [(#%type-decl (#%alias t)) `(type ,name = ,(type->string/sig #'t))]
-    [(#%type-decl (#%opaque)) `(type ,name)]))
+    [(#%type-decl (#%opaque)) `(type ,name)]
+    [(#%type-decl (#%data c ...))
+     ;; TODO: use the types of the constructors to print the variants
+     `(data ,name ....)]))
 
 ;; [FreeIdTbl Id Sym] Stx -> Stx
 (define (subst-ids mapping stx)
