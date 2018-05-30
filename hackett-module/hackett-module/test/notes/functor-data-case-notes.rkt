@@ -11,6 +11,14 @@
            [M.T 1]
            [M.F 0]))))))
 
+(def-module D
+  (mod
+   (data B T F)))
+
+#;
+(def-module FD
+  (appₘ F D))
+
 #|
 ==>
 (λ (M-)

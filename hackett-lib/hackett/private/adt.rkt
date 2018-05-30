@@ -24,6 +24,7 @@
 
 (provide (for-syntax type-constructor-spec data-constructor-spec
                      type-constructor-val data-constructor-val
+                     data-constructor-arity
                      data-constructor-field-types)
          (rename-out [λ lambda] [λ* lambda*])
          data case* case λ λ* defn _)

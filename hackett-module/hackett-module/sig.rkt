@@ -4,6 +4,7 @@
          Π
          val
          type
+         data
          def-signature)
 
 (require syntax/parse/define

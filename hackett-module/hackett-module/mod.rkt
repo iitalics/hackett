@@ -4,10 +4,16 @@
  racket/pretty
  syntax/parse/define
  hackett/private/type-language
+ (only-in hackett/private/adt
+          data-constructor?
+          data-constructor-arity
+          data-constructor-make-match-pat)
  (prefix-in hkt: hackett/base)
  (prefix-in sig: "sig.rkt")
  (prefix-in l: "link/mod.rkt")
  (for-syntax racket/base
+             racket/match
+             racket/list
              syntax/parse
              syntax/kerncase
              syntax/id-set
@@ -22,11 +28,12 @@
 
   (define-literal-set mod-stop-literals
     #:literal-sets [kernel-literals]
-    [hkt:: hkt:type])
+    [hkt:: hkt:type hkt:data])
 
   (define mod-stop-ids
     (list #'hkt::
           #'hkt:type
+          #'hkt:data
           #'define-values
           #'define-syntaxes
           #'begin
@@ -64,6 +71,11 @@
              #:with residual (syntax-property #'(values)
                                               disappeared-binding
                                               (syntax-local-introduce #'id))]
+    [pattern (hkt:data id:id ctor:id ...)
+             #:with sig-entry #'(sig:data id ctor ...)
+             #:with [val-id ...] #'[ctor ...]
+             ;; TODO: attach the other things
+             #:with residual #'(values)]
     [pattern (hkt:type spec rhs:expr)
              #:fail-unless (identifier? #'spec)
              "type aliases with arguments not allowed in modules"
@@ -140,10 +152,23 @@
    #:with [val-id ...] (reverse (attribute val-id/rev))
    #:with s:sig #'(sig:sig sig-entry ...)
 
-   #:with [[sym/id ...] ...] #'[['val-id val-id] ...]
+   #:do [(define ctor-ids/vals
+           (for*/list ([val-id (in-list (attribute val-id))]
+                       [val-val (in-value (syntax-local-value val-id (λ () #f)))]
+                       #:when (data-constructor? val-val))
+             (list val-id val-val)))]
+
+   #:with [[val-sym/id ...] ...] #'[['val-id val-id] ...]
+   #:with [[ctor-sym/pat ...] ...]
+   (for/list ([id/v (in-list ctor-ids/vals)])
+     (match-define (list id v) id/v)
+     (define n (data-constructor-arity v))
+     (define sub-ids (generate-temporaries (range n)))
+     (define make-match-pat (data-constructor-make-match-pat v))
+     (list #`'#,id #`(l:make-pat-info #,(make-match-pat sub-ids) #,sub-ids)))
    #:with final-expression #'(let-values ([() s.residual])
-                               (l:mod (hash sym/id ... ...)
-                                      (hash)))
+                               (l:mod (hash val-sym/id ... ...)
+                                      (hash ctor-sym/pat ... ...)))
 
    (syntax-property #'final-expression
      mod/acc-sig-prop

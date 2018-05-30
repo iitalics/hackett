@@ -10,7 +10,8 @@
  mod-value-ref
  mod-pattern-ref
  (struct-out pat-info)
- app/pat-info)
+ app/pat-info
+ make-pat-info)
 
 ;; Represents a `mod` form at link-time
 
@@ -41,6 +42,15 @@
     [(_ pat-info-expr:id (sub-pat ...))
      #'(? (pat-info-predicate pat-info-expr)
           (app (pat-info-->values pat-info-expr) sub-pat ...))]))
+
+(define-syntax make-pat-info
+  (syntax-parser
+    [(_ pat:expr (sub-id:id ...))
+     #'(pat-info
+        (λ (v)
+          (match v [pat #true] [_ #false]))
+        (λ (v)
+          (match v [pat (values sub-id ...)])))]))
 
 ;; ------------------------------------------------------------------------------
 
@@ -77,15 +87,15 @@
      (hash 'x 4
            ':: cons
            'Nil '())
-     (hash ':: (pat-info pair? uncons)
-           'Nil (pat-info null? ->no-values))))
+     (hash ':: (make-pat-info (cons a b) [a b])
+           'Nil (make-pat-info '() []))))
 
   (functor
    (mod
      (hash 'x 4
            ':: list
            'Nil 'nil)
-     (hash ':: (pat-info list? list->values)
-           'Nil (pat-info (or/c 'nil) ->no-values))))
+     (hash ':: (make-pat-info (list a b) [a b])
+           'Nil (make-pat-info 'nil []))))
 
   )
