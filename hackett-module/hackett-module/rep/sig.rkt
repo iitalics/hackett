@@ -182,6 +182,14 @@
            #:attr residual (residual #'[constructor-id.residual ... expansion]
                                      #'type-decl)]
 
+  ;; (#%module-decl signature)
+  [pattern (module-decl:#%module-decl
+            {~var signature (sig intdef-ctx)})
+           #:attr expansion (syntax/loc/props this-syntax
+                              (module-decl signature.expansion))
+           #:attr residual (residual #'[signature.residual expansion]
+                                     #'module-decl)]
+
   )
 
 ;; ---------------------------------------------
