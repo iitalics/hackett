@@ -36,7 +36,8 @@
    opaque-type-ids
    data-type-ids
    value-ids
-   pattern-ids]
+   pattern-ids
+   submod-ids]
   #:property prop:procedure
   (λ (self stx)
     (define x- (module-var-transformer-internal-id self))
@@ -213,10 +214,11 @@
           #`(module-var-transformer
              (quote-syntax #,internal-id)
              (quote-syntax #,s)
-             (hash op-key/id ... ...)
-             (hash data-key/id ... ...)
-             (hash ctor-key/id ... ... val-key/id ... ...)
-             (hash ctor-key/id ... ...))))
+             (hash op-key/id ... ...)          ; opaque types
+             (hash data-key/id ... ...)        ; data types
+             (hash ctor-key/id ... ... val-key/id ... ...) ; values
+             (hash ctor-key/id ... ...)        ; patterns
+             (hash))))                         ; submods
 
   ;; ------
 
@@ -306,7 +308,7 @@
 
 (define-syntax-class module-binding
   #:description "module name"
-  #:attributes [value internal-id sig opaque-ids value-ids pattern-ids expansion-ctx]
+  #:attributes [value internal-id sig opaque-ids value-ids pattern-ids submod-ids expansion-ctx]
   [pattern {~var m (local-value module-var-transformer?)}
            #:attr value (@ m.local-value)
            #:do [(match-define (module-var-transformer x-
@@ -314,7 +316,8 @@
                                                        op-key->id
                                                        data-key->id
                                                        val-key->id
-                                                       pat-key->id)
+                                                       pat-key->id
+                                                       submod-key->id)
                    (@ value))]
            #:with internal-id (syntax-local-introduce x-)
            #:attr sig (syntax-local-introduce s)
@@ -322,6 +325,7 @@
            #:attr data-ids data-key->id
            #:attr value-ids val-key->id
            #:attr pattern-ids pat-key->id
+           #:attr submod-ids submod-key->id
            #:attr expansion-ctx
            (module-make-type-expansion-context (@ sig)
                                                (@ opaque-ids)

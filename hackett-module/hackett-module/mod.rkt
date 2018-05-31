@@ -168,6 +168,7 @@
              (list val-id val-val)))]
 
    #:with [[val-sym/id ...] ...] #'[['val-id val-id] ...]
+
    #:with [[ctor-sym/pat ...] ...]
    (for/list ([id/v (in-list ctor-ids/vals)])
      (match-define (list id v) id/v)
@@ -175,9 +176,13 @@
      (define sub-ids (generate-temporaries (range n)))
      (define make-match-pat (data-constructor-make-match-pat v))
      (list #`'#,id #`(l:make-pat-info #,(make-match-pat sub-ids) #,sub-ids)))
+
+   #:with [[submod-sym/id ...] ...] #'[]
+
    #:with final-expression #'(let-values ([() s.residual])
                                (l:mod (hash val-sym/id ... ...)
-                                      (hash ctor-sym/pat ... ...)))
+                                      (hash ctor-sym/pat ... ...)
+                                      (hash submod-sym/id ... ...)))
 
    (syntax-property #'final-expression
      mod/acc-sig-prop
