@@ -325,7 +325,9 @@
            #:attr expansion-ctx
            (module-make-type-expansion-context (@ sig)
                                                (@ opaque-ids)
-                                               (@ data-ids))])
+                                               (@ data-ids)
+                                               ; TOOD: submod-ids?
+                                               )])
 
 ;; ---------------------------------------------------------
 

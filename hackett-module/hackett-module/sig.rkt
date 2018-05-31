@@ -5,6 +5,7 @@
          val
          type
          data
+         module
          def-signature)
 
 (require syntax/parse/define
@@ -24,15 +25,16 @@
                      hackett/private/util/stx
                      "rep/sig.rkt"
                      "namespace/namespace.rkt"
-                     "util/hash.rkt"
-                     ))
+                     "util/hash.rkt"))
+
 
 (define-syntax val #f)
+(define-syntax module #f)
 
 (begin-for-syntax
   (define-literal-set sig-surface-literals
     #:datum-literals [: =]
-    [val type data])
+    [val type data module])
 
   (define-syntax-class sig-entry
     #:attributes [[key 1] [id 1] [decl 1]]
@@ -57,16 +59,20 @@
     [pattern (type {~type X:id} = {~type alias-type:expr})
       #:with [key ...]  #`[#,(namespaced:type #'X)]
       #:with [id ...]   #'[X]
-      #:with [decl ...] #'[(#%type-decl (#%alias alias-type))]])
+      #:with [decl ...] #'[(#%type-decl (#%alias alias-type))]]
+    [pattern (module {~module X:id} : {~signature signature:expr})
+      #:with [key ...]  #`[#,(namespaced:module #'X)]
+      #:with [id ...]   #'[X]
+      #:with [decl ...] #'[(#%module-decl signature)]])
 
   (define-syntax-class sig-entries
     #:attributes [[key 1] [id 1] [decl 1]]
     [pattern [entry:sig-entry ...]
       #:with [key ...] #'[entry.key ... ...]
       #:with [id ...] #'[entry.id ... ...]
-      #:with [decl ...] #'[entry.decl ... ...]])
+      #:with [decl ...] #'[entry.decl ... ...]]))
 
-  )
+
 
 (define-syntax-parser sig
   [(_ {~value ent} ...)
