@@ -35,7 +35,8 @@
    opaque-type-ids
    data-type-ids
    value-ids
-   pattern-ids]
+   pattern-ids
+   submod-ids]
   #:property prop:procedure
   (λ (self stx)
     (define x- (module-var-transformer-internal-id self))
@@ -212,10 +213,11 @@
           #`(module-var-transformer
              (quote-syntax #,internal-id)
              (quote-syntax #,s)
-             (hash op-sym/id ... ...)
-             (hash data-sym/id ... ...)
-             (hash ctor-sym/id ... ... val-sym/id ... ...)
-             (hash ctor-sym/id ... ...))))
+             (hash op-sym/id ... ...)         ; opaque types
+             (hash data-sym/id ... ...)       ; data types
+             (hash ctor-sym/id ... ... val-sym/id ... ...) ; values
+             (hash ctor-sym/id ... ...)       ; patterns
+             (hash))))                        ; submods
 
   ;; ------
 
@@ -305,7 +307,7 @@
 
 (define-syntax-class module-binding
   #:description "module name"
-  #:attributes [value internal-id sig opaque-ids value-ids pattern-ids expansion-ctx]
+  #:attributes [value internal-id sig opaque-ids value-ids pattern-ids submod-ids expansion-ctx]
   [pattern {~var m (local-value module-var-transformer?)}
            #:attr value (@ m.local-value)
            #:do [(match-define (module-var-transformer x-
@@ -313,7 +315,8 @@
                                                        op-sym->id
                                                        data-sym->id
                                                        val-sym->id
-                                                       pat-sym->id)
+                                                       pat-sym->id
+                                                       submod-sym->id)
                    (@ value))]
            #:with internal-id (syntax-local-introduce x-)
            #:attr sig (syntax-local-introduce s)
@@ -321,10 +324,16 @@
            #:attr data-ids data-sym->id
            #:attr value-ids val-sym->id
            #:attr pattern-ids pat-sym->id
+           #:attr submods-ids submod-sym->id
            #:attr expansion-ctx
            (module-make-type-expansion-context (@ sig)
                                                (@ opaque-ids)
-                                               (@ data-ids))])
+                                               (@ data-ids)
+                                               ; TOOD: submod-ids?
+                                               )])
+
+(define-syntax-class module-path
+  #:description "module name"
 
 ;; ---------------------------------------------------------
 

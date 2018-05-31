@@ -14,11 +14,12 @@
  make-pat-info)
 
 ;; Represents a `mod` form at link-time
-
-; vals : [Hashof Sym Any]
-; pats : [Hashof Sym PatInfo]
+; A Mod is a (mod vals pats submods)
+;   vals : [Hashof Sym Any]
+;   pats : [Hashof Sym PatInfo]
+;   submods : [Hashof Sym Mod]
 (struct mod
-  [vals pats]
+  [vals pats submods]
   #:transparent)
 
 ;; Represents the information need to reconstruct
@@ -36,6 +37,9 @@
 
 (define (mod-pattern-ref m x)
   (hash-ref (mod-pats m) x))
+
+(define (mod-submod-ref m x)
+  (hash-ref (mod-submods m) x))
 
 (define-match-expander app/pat-info
   (syntax-parser
@@ -88,7 +92,8 @@
            ':: cons
            'Nil '())
      (hash ':: (make-pat-info (cons a b) [a b])
-           'Nil (make-pat-info '() []))))
+           'Nil (make-pat-info '() []))
+     (hash)))
 
   (functor
    (mod
@@ -96,6 +101,7 @@
            ':: list
            'Nil 'nil)
      (hash ':: (make-pat-info (list a b) [a b])
-           'Nil (make-pat-info 'nil []))))
+           'Nil (make-pat-info 'nil []))
+     (hash)))
 
   )
