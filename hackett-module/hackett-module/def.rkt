@@ -1,7 +1,6 @@
 #lang racket/base
 (require
  "rep/sig-literals.rkt"
- "mod.rkt"
  "dot.rkt"
  "namespace/reqprov.rkt"
  racket/pretty

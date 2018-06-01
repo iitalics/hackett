@@ -15,6 +15,7 @@
           data-constructor-spec)
  (prefix-in hkt: hackett/base)
  (prefix-in sig: (unmangle-in #:no-introduce "sig.rkt"))
+ (prefix-in mod: (unmangle-in #:no-introduce "def.rkt"))
  (prefix-in l: "link/mod.rkt")
  (for-syntax racket/base
              racket/match
@@ -34,12 +35,13 @@
 
   (define-literal-set mod-stop-literals
     #:literal-sets [kernel-literals]
-    [hkt:: hkt:type hkt:data])
+    [hkt:: hkt:type hkt:data mod:def-module])
 
   (define mod-stop-ids
     (list #'hkt::
           #'hkt:type
           #'hkt:data
+          #'mod:def-module
           #'define-values
           #'define-syntaxes
           #'begin
@@ -68,6 +70,7 @@
   (define-syntax-class hackett-module-component
     #:attributes [sig-entry [val-id 1] residual]
     #:literal-sets [mod-stop-literals]
+
     ;; NOTE: we are not introducing the type namespace
     ;;   here, because they will be introduced by `sig:val`
     ;;   and `sig:type` (the surface syntax).
@@ -77,6 +80,7 @@
              #:with residual (syntax-property #'(values)
                                               disappeared-binding
                                               (syntax-local-introduce #'id))]
+
     [pattern (hkt:data id:id
                        {~and {~seq variant-stuff ...}
                              {~seq variant:data-constructor-spec}}
@@ -85,6 +89,7 @@
              #:with [val-id ...] #'[variant.tag ...]
              ;; TODO: attach the other things
              #:with residual #'(values)]
+
     [pattern (hkt:type ~! spec rhs:expr)
              #:fail-unless (identifier? #'spec)
              "type aliases with arguments not allowed in modules"
@@ -92,7 +97,14 @@
              #:with [val-id ...] #'[]
              #:with residual (syntax-property #'(values)
                                               disappeared-binding
-                                              (syntax-local-introduce #'spec))])
+                                              (syntax-local-introduce #'spec))]
+
+    [pattern (mod:def-module ~! M:id body:expr)
+             #:with sig-entry #'(sig:module M : ????)
+             #:with [val-id ...] #'[]
+             #:with residual #'(values)]
+
+    )
 
   ;; Id -> Bool
   (define (variable-id? x)
