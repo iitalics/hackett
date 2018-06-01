@@ -71,7 +71,9 @@
     [(#%type-decl (#%opaque)) `(type ,name)]
     [(#%type-decl (#%data c ...))
      ;; TODO: use the types of the constructors to print the variants
-     `(data ,name ....)]))
+     `(data ,name ....)]
+    [(#%module-decl signature)
+     `(module ,name : ,(sig->datum #'signature))]))
 
 ;; [FreeIdTbl Id Sym] Stx -> Stx
 (define (subst-ids mapping stx)
