@@ -103,6 +103,7 @@
 
 ;; ---------------------------------------------
 
+;; Id PartialDecl IntDefCtx -> Void
 ;; declares that the decl exists without binding what
 ;; its "equal to".
 (define (syntax-local-declare-decl id decl intdef-ctx)
