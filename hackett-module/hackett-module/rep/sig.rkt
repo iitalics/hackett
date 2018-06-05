@@ -12,6 +12,7 @@
          racket/list
          syntax/parse
          syntax/parse/define
+         (only-in syntax/parse [attribute @])
          syntax/intdef
          syntax/id-table
          threading
@@ -76,6 +77,21 @@
 
 ;; ---------------------------------------------
 
+;; declares that the decl exists without binding what
+;; its "equal to".
+(define (syntax-local-declare-decl id decl intdef-ctx)
+  (syntax-parse decl
+    #:context 'syntax-local-declare-decl
+    #:literal-sets [sig-literals]
+    [{~or (#%type-decl . _)
+          (#%val-decl . _)
+          (#%constructor-decl . _)}
+     (syntax-local-bind-syntaxes (list id) #f intdef-ctx)]
+
+    [(#%module-decl . _)
+     (eprintf "syntax-local-declare-decl: TODO: module bindings unsupported")
+     (syntax-local-bind-syntaxes (list id) #f intdef-ctx)]))
+
 (define-syntax-class (expanded-id intdef-ctx)
   #:description #f
   #:attributes [expansion residual]
@@ -102,10 +118,11 @@
            #:do [(define intdef-ctx* (syntax-local-make-definition-context intdef-ctx))
                  (define (intro stx)
                    (internal-definition-context-introduce intdef-ctx* stx))
-                 (syntax-local-bind-syntaxes
-                  (attribute internal-ids.values)
-                  #f
-                  intdef-ctx*)]
+
+                 (for ([(key id) (in-hash (@ internal-ids.value))])
+                   (define decl (hash-ref (@ decls.value) key))
+                   (syntax-local-declare-decl id decl intdef-ctx*))]
+
            #:with internal-ids- (intro #'internal-ids)
            #:with [{~var decl- (decl intdef-ctx*)} ...] (attribute decls.values)
            #:with decls-expansion-
