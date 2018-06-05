@@ -7,6 +7,7 @@
     "hackett-lib"
     "threading-lib"
     "syntax-classes-lib"
+    "struct-like-struct-type-property"
     "rackunit-lib"
     ))
 
