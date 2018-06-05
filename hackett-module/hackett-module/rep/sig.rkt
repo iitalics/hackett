@@ -22,6 +22,7 @@
          "../util/stx-traverse.rkt"
          "../util/hash.rkt"
          "../check/module-var.rkt"
+         "../prop-dot-accessible.rkt"
          (for-syntax racket/base)
          (for-template racket/base
                        "../dot.rkt"
@@ -136,7 +137,12 @@
          (hash key/tmp-id ... ...))
       intdef-ctx)]))
 
-(struct declared-module-var [key->tmp-id])
+(struct declared-module-var [key->tmp-id]
+  #:property prop:dot-accessible
+  (λ (self)
+    (define hsh (declared-module-var-key->tmp-id self))
+    (dot-accessible (λ (key)
+                      (hash-ref hsh key #f)))))
 
 ;; -----------------
 
