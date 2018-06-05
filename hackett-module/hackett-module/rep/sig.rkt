@@ -35,18 +35,38 @@
 
 ;; ---------------------------------------------
 
+(define ((make-local-expand literal-ids) stx [intdef-ctx #f])
+  (local-expand stx 'expression literal-ids intdef-ctx))
+
 (define-simple-macro
-  (define-expansion-class name:id desc:str expanded-name:id literal-ids:expr)
+  (define-expansion-class name:id desc:str expanded-name:id expand-fn:expr)
   (define-syntax-class (name [intdef-ctx #f])
     #:description desc
     #:attributes [expansion residual]
     [pattern stx
              #:with {~var || (expanded-name intdef-ctx)}
-             (local-expand #'stx 'expression literal-ids intdef-ctx)]))
+             (expand-fn #'stx intdef-ctx)]))
 
-(define-expansion-class ref-id "id reference" expanded-id sig-literal-ids)
-(define-expansion-class sig "sig" expanded-sig sig-literal-ids)
-(define-expansion-class decl "sig declaration" expanded-decl sig-literal-ids)
+(define sig-local-expand
+  (make-local-expand sig-literal-ids))
+
+(define-expansion-class ref-id "id reference" expanded-id sig-local-expand)
+
+(define-expansion-class partial-sig "signature" partial-expanded-sig sig-local-expand)
+(define-expansion-class partial-decl "signature declaration" partial-expanded-decl sig-local-expand)
+
+(define (partial-expand-sig stx [intdef-ctx #f])
+  (syntax-parse stx
+    [{~var S (partial-sig intdef-ctx)}
+     #'S.expansion]))
+
+(define (partial-expand-decl stx [intdef-ctx #f])
+  (syntax-parse stx
+    [{~var D (partial-decl intdef-ctx)}
+     #'D.expansion]))
+
+(define-expansion-class sig "signature" expanded-sig partial-expand-sig)
+(define-expansion-class decl "signature declaration" expanded-decl partial-expand-decl)
 
 (define (expand-sig stx [intdef-ctx #f])
   (syntax-parse stx
@@ -57,6 +77,8 @@
   (syntax-parse stx
     [{~var D (decl intdef-ctx)}
      #'D.expansion]))
+
+;; ---------------------------------------------
 
 ;; Signature [FreeIdTbl Id] -> SignatureStx
 ;; note: result is stx, aka. unexpanded
@@ -229,6 +251,46 @@
                                      #'module-decl)]
 
   )
+
+;; ---------------------------------------------
+
+(define-syntax-class (partial-expanded-sig intdef-ctx)
+  #:description #f
+  #:attributes [expansion residual]
+  #:commit
+  #:literal-sets [sig-literals]
+
+  [pattern (sig:#%sig
+            internal-ids:hash-literal
+            decls:hash-literal)
+
+           #:with [{~var decl- (partial-decl intdef-ctx)} ...]
+           (attribute decls.values)
+           #:with decls-
+           (hash-zip (attribute decls.keys) (attribute decl-.expansion))
+           #:with expansion
+           (syntax/loc/props this-syntax
+             (sig internal-ids decls-))
+           #:attr residual (residual #'[decl-.residual ... expansion] #'sig)]
+
+  [pattern (pi:#%pi-sig . rst)
+           #:with expansion this-syntax
+           #:with residual (residual #'[expansion] #'pi)])
+
+(define-syntax-class (partial-expanded-decl intdef-ctx)
+  #:description #f
+  #:attributes [expansion residual]
+  #:commit
+  #:literal-sets [sig-literals]
+
+  [pattern (module-decl:#%module-decl
+            {~var s (partial-sig intdef-ctx)})
+           #:with expansion #'(module-decl s.expansion)
+           #:with residual (residual #'[s.residual expansion] #'module-decl)]
+
+  [pattern (head . rst)
+           #:with expansion this-syntax
+           #:with residual (residual #'[expansion] #'head)])
 
 ;; ---------------------------------------------
 
