@@ -88,9 +88,30 @@
           (#%constructor-decl . _)}
      (syntax-local-bind-syntaxes (list id) #f intdef-ctx)]
 
-    [(#%module-decl . _)
-     (eprintf "syntax-local-declare-decl: TODO: module bindings unsupported")
-     (syntax-local-bind-syntaxes (list id) #f intdef-ctx)]))
+    [(#%module-decl (#%pi-sig . _))
+     (syntax-local-bind-syntaxes (list id) #f intdef-ctx)]
+
+    [(#%module-decl (#%sig internal-ids:hash-literal
+                           decls:hash-literal))
+
+     (define/syntax-parse [[key tmp-id] ...]
+       (for/list ([(key id) (in-hash (@ internal-ids.value))])
+         (define decl (hash-ref (@ decls.value) key))
+         (define tmp-id (generate-temporary (namespaced-symbol key)))
+         (syntax-local-declare-decl tmp-id decl intdef-ctx)
+         (list key tmp-id)))
+
+     (define/syntax-parse [[key/tmp-id ...] ...] #'[['key (quote-syntax tmp-id)] ...])
+
+     (syntax-local-bind-syntaxes
+      (list id)
+      #'(declared-module-var
+         (hash key/tmp-id ... ...))
+      intdef-ctx)]))
+
+(struct declared-module-var [key->tmp-id])
+
+;; -----------------
 
 (define-syntax-class (expanded-id intdef-ctx)
   #:description #f
