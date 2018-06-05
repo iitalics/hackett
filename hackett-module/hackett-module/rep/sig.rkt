@@ -55,11 +55,13 @@
 (define-expansion-class partial-sig "signature" partial-expanded-sig sig-local-expand)
 (define-expansion-class partial-decl "signature declaration" partial-expanded-decl sig-local-expand)
 
+;; Stx [IntDefCtx] -> PartialSig
 (define (partial-expand-sig stx [intdef-ctx #f])
   (syntax-parse stx
     [{~var S (partial-sig intdef-ctx)}
      #'S.expansion]))
 
+;; Stx [IntDefCtx] -> PartialDecl
 (define (partial-expand-decl stx [intdef-ctx #f])
   (syntax-parse stx
     [{~var D (partial-decl intdef-ctx)}
@@ -68,11 +70,13 @@
 (define-expansion-class sig "signature" expanded-sig partial-expand-sig)
 (define-expansion-class decl "signature declaration" expanded-decl partial-expand-decl)
 
+;; Stx [IntDefCtx] -> Signature
 (define (expand-sig stx [intdef-ctx #f])
   (syntax-parse stx
     [{~var S (sig intdef-ctx)}
      #'S.expansion]))
 
+;; Stx [IntDefCtx] -> Decl
 (define (expand-decl stx [intdef-ctx #f])
   (syntax-parse stx
     [{~var D (decl intdef-ctx)}
@@ -141,6 +145,8 @@
   [pattern expansion:id
            #:with residual (residual #'[] #'expansion)])
 
+;; expects result from partial-sig.expansion as input, outputs
+;; a fully expanded sig in .expansion.
 (define-syntax-class (expanded-sig intdef-ctx)
   #:description #f
   #:attributes [expansion residual]
@@ -167,7 +173,7 @@
                    (syntax-local-declare-decl id decl intdef-ctx*))]
 
            #:with internal-ids- (intro #'internal-ids)
-           #:with [{~var decl- (decl intdef-ctx*)} ...] (attribute decls.values)
+           #:with [{~var decl- (expanded-decl intdef-ctx*)} ...] (attribute decls.values)
            #:with decls-expansion-
            (hash-zip (attribute decls.keys) (attribute decl-.expansion))
            #:attr expansion (~>> (syntax/loc/props this-syntax
@@ -200,6 +206,8 @@
            #:attr residual (residual #'[A.residual B*.residual expansion]
                                      #'head)])
 
+;; expects result from partial-decl.expansion as input, outputs
+;; a fully expanded decl in .expansion.
 (define-syntax-class (expanded-decl intdef-ctx)
   #:description #f
   #:attributes [expansion residual]
@@ -254,6 +262,8 @@
 
 ;; ---------------------------------------------
 
+;; expects once local-expanded syntax as input, outputs
+;; partially expanded signature.
 (define-syntax-class (partial-expanded-sig intdef-ctx)
   #:description #f
   #:attributes [expansion residual]
@@ -277,6 +287,8 @@
            #:with expansion this-syntax
            #:with residual (residual #'[expansion] #'pi)])
 
+;; expects once local-expanded decl as input, outputs
+;; partially expanded decl.
 (define-syntax-class (partial-expanded-decl intdef-ctx)
   #:description #f
   #:attributes [expansion residual]
