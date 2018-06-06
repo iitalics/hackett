@@ -6,4 +6,3 @@
 (define (hash-zip ks vs)
   (for/hash ([k (in-list ks)] [v (in-list vs)])
     (values k v)))
-

@@ -4,8 +4,6 @@
          decl
          expand-sig
          expand-decl
-         signature-subst
-         signature-substs
          sig-where)
 
 (require racket/syntax
@@ -83,25 +81,6 @@
   (syntax-parse stx
     [{~var D (decl intdef-ctx)}
      #'D.expansion]))
-
-;; ---------------------------------------------
-
-;; Signature [FreeIdTbl Id] -> SignatureStx
-;; note: result is stx, aka. unexpanded
-(define (signature-substs s mapping)
-  (let traverse ([stx s])
-    (syntax-parse stx
-      [:id
-       (free-id-table-ref mapping stx stx)]
-      [_
-       (traverse-stx/recur stx traverse)])))
-
-;; Signature Id Id -> Signature
-(define (signature-subst s x-old x-new)
-  (define mapping
-    (make-immutable-free-id-table
-     (list (cons x-old x-new))))
-  (signature-substs s mapping))
 
 ;; ---------------------------------------------
 

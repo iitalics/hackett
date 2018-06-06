@@ -18,6 +18,8 @@
                      NAMESPACE:type   namespaced:type
                      NAMESPACE:module namespaced:module
                      ; ---
+                     signature-subst
+                     signature-substs
                      sig-internal-ids
                      sig-decls
                      decl-type?
@@ -29,7 +31,9 @@
 
 (require (for-syntax racket/base
                      syntax/parse
-                     "../util/stx.rkt"))
+                     syntax/id-table
+                     "../util/stx.rkt"
+                     "../util/stx-traverse.rkt"))
 
 ;; A Key is a (namespaced Namespace Symbol)
 ;; A Namespace is one of:
@@ -97,6 +101,23 @@
 ;; -----------------------------------------------------------------
 
 (begin-for-syntax
+
+  ;; Signature [FreeIdTbl Id] -> SignatureStx
+  ;; note: result is stx, aka. unexpanded
+  (define (signature-substs s mapping)
+    (let traverse ([stx s])
+      (syntax-parse stx
+        [:id
+         (free-id-table-ref mapping stx stx)]
+        [_
+         (traverse-stx/recur stx traverse)])))
+
+  ;; Signature Id Id -> Signature
+  (define (signature-subst s x-old x-new)
+    (define mapping
+      (make-immutable-free-id-table
+       (list (cons x-old x-new))))
+    (signature-substs s mapping))
 
   ;; Sig -> [Hashof Key Identifier]
   (define (sig-internal-ids s)
