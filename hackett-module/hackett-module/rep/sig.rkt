@@ -23,6 +23,7 @@
          "../util/hash.rkt"
          "../check/module-var.rkt"
          "../prop-dot-accessible.rkt"
+         "../prop-reintroducible-dot-type.rkt"
          (for-syntax racket/base)
          (for-template racket/base
                        "../dot.rkt"
@@ -133,16 +134,26 @@
 
      (syntax-local-bind-syntaxes
       (list id)
-      #'(declared-module-var
+      #`(declared-module-var
+         (quote-syntax #,id)
          (hash key/tmp-id ... ...))
       intdef-ctx)]))
 
-(struct declared-module-var [type-key->tmp-id]
+(struct declared-module-var [module-id type-key->tmp-id]
+  #:property prop:dot-origin
+  (λ (self)
+    (dot-origin (declared-module-var-module-id self)))
   #:property prop:dot-accessible/type
   (λ (self)
+    (define m-id (declared-module-var-module-id self))
     (define hsh (declared-module-var-type-key->tmp-id self))
-    (dot-accessible/type (λ (key)
-                           (hash-ref hsh key #f)))))
+    (dot-accessible/type
+     (λ (key)
+       (define id (hash-ref hsh key #f))
+       (and id
+            (attach-reintroducible-dot-type
+             id
+             (reintroducible-dot-type m-id (namespaced-symbol key))))))))
 
 ;; -----------------
 

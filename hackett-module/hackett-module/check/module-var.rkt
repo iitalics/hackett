@@ -49,8 +49,9 @@
      stx))
   #:property prop:dot-accessible
   (λ (self)
-    (match-define (module-var-transformer _ _ ho hd hv hp hm) self)
+    (match-define (module-var-transformer id _ ho hd hv hp hm) self)
     (dot-accessible
+     id
      (λ (val-key) (hash-ref hv val-key #f))
      (λ (pat-key) (hash-ref hp pat-key #f))
      (λ (type-key) (or (hash-ref ho type-key #f)

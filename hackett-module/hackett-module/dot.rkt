@@ -23,6 +23,7 @@
                       prop:case-pattern-expander)
              hackett/private/util/stx
              "prop-reintroducible-dot-type.rkt"
+             "prop-dot-accessible.rkt"
              "check/module-var.rkt"
              "namespace/namespace.rkt"
              "util/stx-traverse.rkt"
@@ -98,7 +99,7 @@
   ;; ASSUME s-to-reintro is already expanded
   (define (reintroduce-#%dot m-dots-are-from-id m-to-prefix-id s-to-reintro ctx)
     (define/syntax-parse [m/internal m/prefix]
-      (list (module-var-transformer-internal-id
+      (list (dot-origin-internal-id
              (syntax-local-value m-dots-are-from-id #f ctx))
             m-to-prefix-id))
 
@@ -109,7 +110,8 @@
     (define (traverse stx)
       (syntax-parse stx
         #:literals [#%type:con]
-        [(#%type:con {~var x (reintroducible-dot-type-id ctx)})
+        [{~or (#%type:con {~var x (reintroducible-dot-type-id ctx)})
+              {~var x (reintroducible-dot-type-id ctx)}}
          (if (free-identifier=? #'x.module-id #'m/internal)
              (syntax/loc stx (#%dot_τ m/prefix x.external-sym))
              stx)]
