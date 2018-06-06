@@ -137,12 +137,12 @@
          (hash key/tmp-id ... ...))
       intdef-ctx)]))
 
-(struct declared-module-var [key->tmp-id]
-  #:property prop:dot-accessible
+(struct declared-module-var [type-key->tmp-id]
+  #:property prop:dot-accessible/type
   (λ (self)
-    (define hsh (declared-module-var-key->tmp-id self))
-    (dot-accessible (λ (key)
-                      (hash-ref hsh key #f)))))
+    (define hsh (declared-module-var-type-key->tmp-id self))
+    (dot-accessible/type (λ (key)
+                           (hash-ref hsh key #f)))))
 
 ;; -----------------
 

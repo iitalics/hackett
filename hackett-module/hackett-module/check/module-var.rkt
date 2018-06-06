@@ -15,6 +15,7 @@
  hackett/private/util/stx
  "expand-check-prop.rkt"
  "../prop-reintroducible-dot-type.rkt"
+ "../prop-dot-accessible.rkt"
  "../util/stx.rkt"
  "../util/hash.rkt"
  (for-template "../rep/sig-literals.rkt"
@@ -45,7 +46,15 @@
     ((make-variable-like-transformer
       (λ (id)
         (attach-sig (replace-stx-loc x- id) sig)))
-     stx)))
+     stx))
+  #:property prop:dot-accessible
+  (λ (self)
+    (match-define (module-var-transformer _ _ ho hd hv hp hm) self)
+    (dot-accessible
+     (λ (val-key) (hash-ref hv val-key #f))
+     (λ (pat-key) (hash-ref hp pat-key #f))
+     (λ (type-key) (or (hash-ref ho type-key #f)
+                       (hash-ref hd type-key #f))))))
 
 (struct opaque-type-constructor
   [module-id external-sym]
